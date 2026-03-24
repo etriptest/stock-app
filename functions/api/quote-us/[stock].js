@@ -1,5 +1,5 @@
 // functions/api/quote-us/[stock].js
-// 美股即時報價 — 透過 Finnhub API
+// 美股即時報價 — 使用 Yahoo Finance（免費，不需要 API Key）
 
 export async function onRequest(context) {
   const symbol = context.params.stock?.trim().toUpperCase();
@@ -7,49 +7,50 @@ export async function onRequest(context) {
     return Response.json({ ok: false, error: '請提供股票代號' }, { status: 400 });
   }
 
-  // API Key 從 Cloudflare 環境變數讀取（安全，不寫死在程式碼裡）
-  const FINNHUB_KEY = context.env.FINNHUB_KEY;
-  if (!FINNHUB_KEY) {
-    return Response.json({ ok: false, error: '伺服器未設定 API Key' }, { status: 500 });
-  }
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'application/json',
+  };
 
   try {
-    // 同時抓報價和公司名稱
-    const [quoteRes, profileRes] = await Promise.all([
-      fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`),
-      fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`)
-    ]);
+    // Yahoo Finance v8 chart API — 抓最新一天的資料當作即時報價
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`;
+    const res  = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const quote   = await quoteRes.json();
-    const profile = await profileRes.json();
+    const data   = await res.json();
+    const result = data?.chart?.result?.[0];
+    if (!result) throw new Error(`查無「${symbol}」，請確認美股代號是否正確`);
 
-    // quote.c = 現價, quote.pc = 昨收, quote.h = 今高, quote.l = 今低, quote.o = 今開
-    if (!quote.c || quote.c === 0) {
-      return Response.json(
-        { ok: false, error: `查無「${symbol}」，請確認美股代號是否正確` },
-        { status: 404 }
-      );
-    }
+    const meta = result.meta;
+    const q    = result.indicators?.quote?.[0] || {};
+    const n    = (result.timestamp || []).length;
 
-    const price = quote.c;
-    const prev  = quote.pc;
+    // 取最新的收盤價
+    const price = meta.regularMarketPrice || meta.previousClose || 0;
+    const prev  = meta.previousClose || price;
     const chg   = Math.round((price - prev) * 100) / 100;
-    const pct   = Math.round((chg / prev) * 10000) / 100;
+    const pct   = prev ? Math.round((chg / prev) * 10000) / 100 : 0;
+
+    if (!price) throw new Error(`查無「${symbol}」，請確認美股代號是否正確`);
+
+    // 公司名稱從 meta 取
+    const name = meta.longName || meta.shortName || symbol;
 
     return Response.json({
       ok:        true,
       code:      symbol,
-      name:      profile.name || symbol,
-      price,
-      prev,
+      name,
+      price:     +price.toFixed(2),
+      prev:      +prev.toFixed(2),
       change:    chg,
       changePct: pct,
-      high:      quote.h || 0,
-      low:       quote.l || 0,
-      open:      quote.o || 0,
-      volume:    quote.v || 0,
+      high:      +(meta.regularMarketDayHigh || q.high?.[n-1] || price).toFixed(2),
+      low:       +(meta.regularMarketDayLow  || q.low?.[n-1]  || price).toFixed(2),
+      open:      +(meta.regularMarketOpen    || q.open?.[n-1] || price).toFixed(2),
+      volume:    meta.regularMarketVolume || q.volume?.[n-1] || 0,
       exchange:  '美股',
-      currency:  'USD',
+      currency:  meta.currency || 'USD',
       market:    'US',
     }, {
       headers: { 'Access-Control-Allow-Origin': '*' }
@@ -57,7 +58,7 @@ export async function onRequest(context) {
 
   } catch (e) {
     return Response.json(
-      { ok: false, error: '查詢失敗，請稍後再試' },
+      { ok: false, error: e.message || '查詢失敗，請稍後再試' },
       { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
     );
   }
