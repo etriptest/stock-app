@@ -217,6 +217,18 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
   <div class="result" id="result">
     <div class="p-card" id="pcrd"></div>
 
+    <!-- K線圖 -->
+    <div class="sec-t">📊 K 線走勢圖</div>
+    <div style="background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px;">
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#d0021b;display:inline-block"></span>MA5</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#f59e0b;display:inline-block"></span>MA20</span>
+        <span style="display:flex;align-items:center;gap:4px;color:var(--dim)">🇹🇼 紅漲綠跌</span>
+      </div>
+      <canvas id="kline-canvas" style="width:100%;height:200px;display:block;border-radius:8px;"></canvas>
+      <div id="kline-msg" style="text-align:center;padding:16px;font-size:13px;color:var(--dim);display:none">資料載入中…</div>
+    </div>
+
     <!-- Pattern Recognition -->
     <div class="sec-t">📐 K 線型態辨識</div>
     <div id="pattern-box"></div>
@@ -651,6 +663,82 @@ function renderPatterns(patterns, tw){
     </div>`;
   }).join('');
 }
+
+// ── K 線繪圖 ──────────────────────────────────────────────────
+function drawKLine(closes, highs, lows, vols, dates, currentPrice, tw){
+  const canvas = document.getElementById('kline-canvas');
+  canvas.style.display = 'block';
+  document.getElementById('kline-msg').style.display = 'none';
+
+  const maxBars = 60;
+  const start = Math.max(0, closes.length - maxBars);
+  const C=[...closes.slice(start)], H=[...highs.slice(start)], L=[...lows.slice(start)];
+  const D=[...(dates||[]).slice(start)];
+
+  if(currentPrice && currentPrice !== C[C.length-1]){
+    C.push(currentPrice);
+    H.push(Math.max(currentPrice, H[H.length-1]||currentPrice));
+    L.push(Math.min(currentPrice, L[L.length-1]||currentPrice));
+    D.push('今日');
+  }
+
+  const n=C.length;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-24||300;
+  const TH=200;
+  canvas.width=W*dpr; canvas.height=TH*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=TH+'px';
+
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const PAD={top:10,bottom:28,left:4,right:44};
+  const cW=W-PAD.left-PAD.right, cH=TH-PAD.top-PAD.bottom;
+  const pMax=Math.max(...H.filter(Boolean))*1.01;
+  const pMin=Math.min(...L.filter(Boolean))*0.99;
+  const pR=pMax-pMin||1;
+
+  function py(p){ return PAD.top+cH*(1-(p-pMin)/pR); }
+  const barGap=cW/n, barW=Math.max(1.5,barGap*0.6);
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,TH);
+
+  for(let i=0;i<=4;i++){
+    const y=PAD.top+cH*(i/4);
+    ctx.strokeStyle='#f0ede5'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+    ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillText((pMax-pR*(i/4)).toFixed(1),W-2,y+3);
+  }
+
+  function calcMA(arr,p){ return arr.map((_,i)=>i<p-1?null:arr.slice(i-p+1,i+1).reduce((a,b)=>a+b,0)/p); }
+  function drawLine(ma,color){
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=1.2; let s=false;
+    ma.forEach((v,i)=>{ if(!v)return; const x=PAD.left+i*barGap+barGap/2; if(!s){ctx.moveTo(x,py(v));s=true;}else ctx.lineTo(x,py(v)); }); ctx.stroke();
+  }
+
+  const upC=tw?'#d0021b':'#007a3d', dnC=tw?'#007a3d':'#d0021b';
+  C.forEach((close,i)=>{
+    if(!close)return;
+    const open=i===0?close:C[i-1], high=H[i]||close, low=L[i]||close;
+    const x=PAD.left+i*barGap+barGap/2, isUp=close>=open, color=isUp?upC:dnC;
+    ctx.strokeStyle=color; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,py(high)); ctx.lineTo(x,py(low)); ctx.stroke();
+    ctx.fillStyle=color;
+    ctx.fillRect(x-barW/2,py(Math.max(open,close)),barW,Math.max(1,py(Math.min(open,close))-py(Math.max(open,close))));
+  });
+
+  drawLine(calcMA(C,5),'#d0021b');
+  drawLine(calcMA(C,20),'#f59e0b');
+
+  ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  const step=Math.ceil(n/6);
+  D.forEach((d,i)=>{
+    if(i%step!==0&&i!==n-1)return;
+    ctx.fillText(d==='今日'?'今日':(d||'').slice(-5),PAD.left+i*barGap+barGap/2,TH-4);
+  });
+}
+
 async function doSearch(){
   const sn=document.getElementById('inp').value.trim().toUpperCase();
   if(!sn)return;
@@ -665,13 +753,29 @@ async function doSearch(){
   setMarket(!tw);
 
   try{
-    let q,C=[],H=[],L=[],V=[];
+    let q,C=[],H=[],L=[],V=[],dates=[];
     if(tw){
-      const [qr,hr]=await Promise.all([fetch(`/api/quote/${sn}`),fetch(`/api/history/${sn}`)]);
-      q=await qr.json();
-      if(!q.ok)throw new Error(q.error||'查詢失敗，請確認台股代號是否正確');
-      const rows=(await hr.json()).data||[];
-      C=rows.map(r=>r.close);H=rows.map(r=>r.high);L=rows.map(r=>r.low);V=rows.map(r=>r.volume);
+      // 抓報價 + 最近3個月歷史（確保有足夠K線數據）
+      const qr = await fetch(`/api/quote/${sn}`);
+      q = await qr.json();
+      if(!q.ok) throw new Error(q.error||'查詢失敗，請確認台股代號是否正確');
+
+      // 依序抓最近3個月，確保至少20筆
+      const now = new Date();
+      for(let delta=2; delta>=0; delta--){
+        const d = new Date(now.getFullYear(), now.getMonth()-delta, 1);
+        const ym = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
+        try{
+          const hr = await fetch(`/api/history/${sn}?ym=${ym}`);
+          const hd = await hr.json();
+          const rows = hd.data||[];
+          for(const r of rows){
+            C.push(r.close); H.push(r.high); L.push(r.low); V.push(r.volume);
+            dates.push(r.date);
+          }
+        }catch(_){}
+        if(C.length >= 20) break;
+      }
     } else {
       const qr=await fetch(`/api/quote-us/${sn}`);
       q=await qr.json();
@@ -724,13 +828,22 @@ async function doSearch(){
     document.getElementById('result').style.display='block';
     document.getElementById('tip').style.display='none';
 
-    // 型態辨識（台股有歷史數據才跑）
+    // K線圖
+    if(C.length >= 5){
+      drawKLine(C, H, L, V, dates, q.price, tw);
+    } else {
+      document.getElementById('kline-msg').style.display='block';
+      document.getElementById('kline-canvas').style.display='none';
+      document.getElementById('kline-msg').textContent='歷史資料不足，無法繪製K線圖';
+    }
+
+    // 型態辨識
     if(C.length >= 20){
       const patterns = detectPatterns(aC, aH, aL, q.price);
       renderPatterns(patterns, tw);
     } else {
       document.getElementById('pattern-box').innerHTML=
-        `<div class="pat-none">美股型態辨識需要歷史 K 線資料，目前版本僅支援台股。</div>`;
+        `<div class="pat-none">需要至少 20 個交易日數據才能辨識型態（目前只有 ${C.length} 筆）。</div>`;
     }
 
     fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
