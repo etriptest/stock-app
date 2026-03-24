@@ -1081,7 +1081,13 @@ function addFav(){
   const favs = getFavs();
   if(favs.find(f=>f.code===code)){ alert(`${code} 已在自選股清單中`); return; }
   const tw = isTW(code);
-  favs.push({ code, market: tw?'TW':'US', addedAt: Date.now() });
+
+  // 先從本地清單查名稱
+  const allDB = [...TW_DB, ...US_DB];
+  const found = allDB.find(s=>s.c===code);
+  const name  = found ? found.n : '';
+
+  favs.push({ code, name, market: tw?'TW':'US', addedAt: Date.now() });
   saveFavs(favs);
   closeModal('modal-fav');
   renderFavs();
@@ -1108,8 +1114,8 @@ function renderFavs(){
   grid.innerHTML = favs.map(f=>`
     <div class="fav-card" id="fav-${f.code}" onclick="go('${f.code}')">
       <div class="fav-del" onclick="event.stopPropagation();removeFav('${f.code}')">✕</div>
-      <div class="w-name">${f.code}</div>
-      <div class="w-code">${f.market==='US'?'🇺🇸 美股':'🇹🇼 台股'}</div>
+      <div class="w-name">${f.name||f.code}</div>
+      <div class="w-code">${f.code} · ${f.market==='US'?'🇺🇸 美股':'🇹🇼 台股'}</div>
       <div class="w-skel" style="height:40px;margin-top:6px;"></div>
     </div>`).join('');
 }
@@ -1125,6 +1131,7 @@ async function loadFavPrices(){
       const res  = await fetch(`/api/multi?stocks=${twCodes.join(',')}`);
       const data = await res.json();
       if(data.ok) data.data.forEach(q=>{
+        updateFavName(q.code, q.name);
         updateFavCard(q.code, q.price, q.changePct, true);
       });
     }catch(_){}
@@ -1136,9 +1143,24 @@ async function loadFavPrices(){
     try{
       const res = await fetch(`/api/quote-us/${code}`);
       const q   = await res.json();
-      if(q.ok) updateFavCard(code, q.price, q.changePct, false);
+      if(q.ok){
+        updateFavName(code, q.name);
+        updateFavCard(code, q.price, q.changePct, false);
+      }
     }catch(_){}
     await new Promise(r=>setTimeout(r,300));
+  }
+}
+
+function updateFavName(code, name){
+  if(!name) return;
+  const favs = getFavs();
+  const f = favs.find(f=>f.code===code);
+  if(f && !f.name){
+    f.name = name;
+    saveFavs(favs);
+    const el = document.getElementById('fav-'+code);
+    if(el){ const nm=el.querySelector('.w-name'); if(nm) nm.textContent=name; }
   }
 }
 
