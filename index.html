@@ -192,10 +192,13 @@
 
   <!-- Search -->
   <div class="s-card">
-    <div class="s-label">請輸入股票代號</div>
+    <div class="s-label">請輸入股票代號或公司名稱</div>
     <div class="s-row">
-      <input class="s-inp" id="inp" type="text" inputmode="numeric"
-             placeholder="例如：2330" maxlength="6" />
+      <div style="flex:1;min-width:0;position:relative;">
+        <input class="s-inp" id="inp" type="text" inputmode="text"
+               placeholder="代號 2330 或名稱 台積電、Apple…" autocomplete="off" />
+        <div id="dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2ddd5;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;margin-top:4px;overflow:hidden;"></div>
+      </div>
       <button class="s-btn" id="sbtn" onclick="doSearch()">查詢</button>
     </div>
     <div class="q-label">常用個股</div>
@@ -272,14 +275,118 @@ const QUICK = [
   {c:'0050',n:'台灣50'},{c:'NVDA',n:'NVDA'},{c:'AAPL',n:'AAPL'},
 ];
 
+// ── 台股名稱對照表（常見個股） ────────────────────────────────
+const TW_STOCKS = [
+  {c:'2330',n:'台積電'},{c:'2317',n:'鴻海'},{c:'2454',n:'聯發科'},
+  {c:'2308',n:'台達電'},{c:'2382',n:'廣達'},{c:'2412',n:'中華電'},
+  {c:'2303',n:'聯電'}, {c:'2327',n:'國巨'},{c:'2379',n:'瑞昱'},
+  {c:'2357',n:'華碩'}, {c:'2395',n:'研華'},{c:'3008',n:'大立光'},
+  {c:'2207',n:'和泰車'},{c:'2912',n:'統一超'},{c:'1301',n:'台塑'},
+  {c:'1303',n:'南亞'}, {c:'1326',n:'台化'},{c:'2002',n:'中鋼'},
+  {c:'2881',n:'富邦金'},{c:'2882',n:'國泰金'},{c:'2886',n:'兆豐金'},
+  {c:'2891',n:'中信金'},{c:'2892',n:'第一金'},{c:'2884',n:'玉山金'},
+  {c:'0050',n:'元大台灣50'},{c:'0056',n:'元大高股息'},
+  {c:'00878',n:'國泰永續高股息'},{c:'00929',n:'復華台灣科技優息'},
+  {c:'2408',n:'南亞科'},{c:'3711',n:'日月光投控'},{c:'2301',n:'光寶科'},
+  {c:'4938',n:'和碩'},{c:'2353',n:'宏碁'},{c:'2356',n:'英業達'},
+];
+
+// ── 美股名稱對照表 ────────────────────────────────────────────
+const US_STOCKS = [
+  {c:'NVDA',n:'NVIDIA'},{c:'AAPL',n:'Apple'},{c:'MSFT',n:'Microsoft'},
+  {c:'GOOGL',n:'Google'},{c:'GOOG',n:'Alphabet'},{c:'AMZN',n:'Amazon'},
+  {c:'META',n:'Meta Facebook'},{c:'TSLA',n:'Tesla'},{c:'NFLX',n:'Netflix'},
+  {c:'AMD',n:'AMD'},{c:'INTC',n:'Intel'},{c:'QCOM',n:'Qualcomm'},
+  {c:'TSM',n:'台積電 TSMC'},{c:'AVGO',n:'Broadcom'},
+  {c:'ORCL',n:'Oracle'},{c:'CRM',n:'Salesforce'},
+  {c:'V',n:'Visa'},{c:'MA',n:'Mastercard'},
+  {c:'JPM',n:'JP Morgan'},{c:'BAC',n:'Bank of America'},
+  {c:'WMT',n:'Walmart'},{c:'COST',n:'Costco'},
+  {c:'DIS',n:'Disney'},{c:'SBUX',n:'Starbucks'},
+  {c:'MCD',n:'McDonald'},{c:'KO',n:'Coca-Cola'},
+  {c:'BRKB',n:'Berkshire Hathaway'},{c:'SPY',n:'標普500 ETF'},
+  {c:'QQQ',n:'那斯達克 ETF'},{c:'SOXX',n:'半導體 ETF'},
+];
+
+// ── Fuzzy search / autocomplete ───────────────────────────────
+const inp = document.getElementById('inp');
+const dd  = document.getElementById('dropdown');
+
+function fuzzySearch(query) {
+  const q = query.trim().toLowerCase();
+  if (!q || q.length < 1) return [];
+  const results = [];
+
+  // 台股：代號或名稱模糊比對
+  for (const s of TW_STOCKS) {
+    if (s.c.startsWith(q) || s.n.includes(query) || s.n.toLowerCase().includes(q)) {
+      results.push({...s, m:'TW'});
+      if (results.length >= 5) break;
+    }
+  }
+
+  // 美股：代號或英文名稱比對
+  for (const s of US_STOCKS) {
+    if (results.length >= 8) break;
+    if (s.c.toLowerCase().startsWith(q) || s.n.toLowerCase().includes(q)) {
+      results.push({...s, m:'US'});
+    }
+  }
+
+  return results.slice(0, 8);
+}
+
+function showDropdown(results) {
+  if (!results.length) { dd.style.display='none'; return; }
+  dd.innerHTML = results.map(r => `
+    <div onclick="selectStock('${r.c}','${r.n}')"
+         style="padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0ede5;font-size:15px;"
+         onmouseover="this.style.background='#f5f3ee'" onmouseout="this.style.background='#fff'">
+      <div>
+        <span style="font-weight:700;color:#1a1a1a;">${r.n}</span>
+        <span style="color:#6b6460;margin-left:6px;font-size:13px;">${r.c}</span>
+      </div>
+      <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${r.m==='US'?'#e8f0f8':'#f0ede5'};color:${r.m==='US'?'#1a6b9a':'#6b6460'};">${r.m==='US'?'🇺🇸 美股':'🇹🇼 台股'}</span>
+    </div>`).join('');
+  // remove last border
+  if (dd.lastElementChild) dd.lastElementChild.style.borderBottom='none';
+  dd.style.display = 'block';
+}
+
+function selectStock(code, name) {
+  inp.value = code;
+  dd.style.display = 'none';
+  doSearch();
+}
+
+inp.addEventListener('input', () => {
+  const val = inp.value.trim();
+  if (!val) { dd.style.display='none'; return; }
+  // 如果是純數字 or 純英文完整代號就直接不顯示下拉
+  const results = fuzzySearch(val);
+  showDropdown(results);
+});
+
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { dd.style.display='none'; doSearch(); }
+  if (e.key === 'Escape') dd.style.display='none';
+});
+
+// 點外面關掉下拉
+document.addEventListener('click', e => {
+  if (!e.target.closest('.s-card')) dd.style.display='none';
+});
+
 // ── Clock ─────────────────────────────────────────────────────
 function tick(){ document.getElementById('clk').textContent = new Date().toLocaleTimeString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit'}); }
 setInterval(tick,1000); tick();
 
 // ── Quick buttons ─────────────────────────────────────────────
-document.getElementById('qrow').innerHTML = QUICK.map(q=>
-  `<button class="q-btn" onclick="go('${q.c}')">${q.c} ${q.n}</button>`
-).join('');
+document.getElementById('qrow').innerHTML = QUICK.map(q=>{
+  const isUS = /^[A-Z]/.test(q.c);
+  const label = isUS ? `${q.n} (${q.c})` : `${q.c} ${q.n}`;
+  return `<button class="q-btn" onclick="go('${q.c}')">${label}</button>`;
+}).join('');
 
 // ── Watchlist skeletons ───────────────────────────────────────
 const wg = document.getElementById('wgrid');
