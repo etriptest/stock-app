@@ -131,7 +131,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 .tip { background: #fffbec; border: 1px solid #edd98a; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font-size: 14px; line-height: 1.8; color: #5a4500; display: none; }
 .tip strong { color: #b07800; }
 
-/* Disclaimer */
+/* Pattern box */
+.pat-card { border-radius: 14px; padding: 15px; margin-bottom: 10px; border: 1px solid; }
+.pat-card.bull { background: #fff0f0; border-color: #f5c0c0; }
+.pat-card.bear { background: #f0faf4; border-color: #a8d9bc; }
+.pat-card.neut { background: #f7f6f2; border-color: #e2ddd5; }
+.pat-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.pat-name.bull { color: #d0021b; }
+.pat-name.bear { color: #007a3d; }
+.pat-name.neut { color: #444; }
+.pat-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.pat-tag.bull { background: #ffd6d6; color: #d0021b; }
+.pat-tag.bear { background: #c8ead8; color: #007a3d; }
+.pat-tag.neut { background: #e8e5de; color: #666; }
+.pat-desc { font-size: 14px; line-height: 1.8; color: #1a1a1a; }
+.pat-warn { font-size: 13px; color: #7a6010; background: #fffbec; border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.pat-none { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; font-size: 14px; color: var(--dim); }
 .disc { background: var(--card2); border: 1px solid var(--bd); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #999; line-height: 1.7; text-align: center; }
 
 /* Watchlist */
@@ -201,6 +216,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
   <!-- Result -->
   <div class="result" id="result">
     <div class="p-card" id="pcrd"></div>
+
+    <!-- Pattern Recognition -->
+    <div class="sec-t">📐 K 線型態辨識</div>
+    <div id="pattern-box"></div>
+
     <div class="sec-t">技術訊號說明</div>
     <div class="lights" id="lights"></div>
     <div class="a-card neu" id="acrd">
@@ -447,7 +467,216 @@ function iVol(r){
   return{dot:'yellow',txt:'成交量偏少，市場觀望，買賣都不積極'};
 }
 
-// ── Main search ───────────────────────────────────────────────
+// ── 型態辨識演算法 ────────────────────────────────────────────
+function detectPatterns(closes, highs, lows, currentPrice) {
+  const patterns = [];
+  const n = closes.length;
+  if (n < 20) return patterns;
+
+  const recent = closes.slice(-20);   // 最近 20 日
+  const mid    = closes.slice(-40, -20); // 前 20 日
+  const ma5  = mav(closes, 5);
+  const ma10 = mav(closes, 10);
+  const ma20 = mav(closes, 20);
+  const ma60 = closes.length >= 60 ? mav(closes, 60) : null;
+
+  const recentHigh = Math.max(...recent);
+  const recentLow  = Math.min(...recent);
+  const midHigh    = mid.length ? Math.max(...mid) : recentHigh;
+  const midLow     = mid.length ? Math.min(...mid) : recentLow;
+  const range      = recentHigh - recentLow;
+
+  // 找近期區域高低點（用於型態辨識）
+  function localPeaks(arr, window=3) {
+    const peaks=[], troughs=[];
+    for(let i=window;i<arr.length-window;i++){
+      const left=arr.slice(i-window,i), right=arr.slice(i+1,i+window+1);
+      if(arr[i]>Math.max(...left)&&arr[i]>Math.max(...right)) peaks.push({i,v:arr[i]});
+      if(arr[i]<Math.min(...left)&&arr[i]<Math.min(...right)) troughs.push({i,v:arr[i]});
+    }
+    return {peaks,troughs};
+  }
+
+  const full = closes.slice(-60);
+  const {peaks, troughs} = localPeaks(full, 3);
+
+  // ── W 底（雙底）────────────────────────────────────────────
+  if(troughs.length>=2){
+    const t1=troughs[troughs.length-2], t2=troughs[troughs.length-1];
+    const midPeak=peaks.find(p=>p.i>t1.i&&p.i<t2.i);
+    if(midPeak){
+      const diff=Math.abs(t1.v-t2.v)/t1.v;
+      if(diff<0.05 && midPeak.v>t1.v*1.03 && currentPrice>midPeak.v*0.97){
+        patterns.push({
+          cls:'bull', name:'W 底（雙底）', tag:'多方反轉',
+          desc:'股價先跌到低點，小幅反彈後又再跌一次，但第二次沒跌破第一次的低點，形成像「W」一樣的形狀。這通常代表跌勢可能要結束，準備往上走。',
+          warn:'目前股價已接近頸線附近，若能明確突破頸線並放量，訊號更加可靠。'
+        });
+      }
+    }
+  }
+
+  // ── M 頭（雙頂）────────────────────────────────────────────
+  if(peaks.length>=2){
+    const p1=peaks[peaks.length-2], p2=peaks[peaks.length-1];
+    const midTrough=troughs.find(t=>t.i>p1.i&&t.i<p2.i);
+    if(midTrough){
+      const diff=Math.abs(p1.v-p2.v)/p1.v;
+      if(diff<0.05 && midTrough.v<p1.v*0.97 && currentPrice<midTrough.v*1.03){
+        patterns.push({
+          cls:'bear', name:'M 頭（雙頂）', tag:'空方反轉',
+          desc:'股價漲到高點後回跌，再度反彈但沒超過上次高點，然後又往下，形成像「M」的形狀。這通常代表漲勢可能結束，注意下跌風險。',
+          warn:'若股價跌破兩峰之間的谷底（頸線），是比較明確的賣出訊號。'
+        });
+      }
+    }
+  }
+
+  // ── 頭肩頂 ──────────────────────────────────────────────────
+  if(peaks.length>=3){
+    const [ls, head, rs] = peaks.slice(-3);
+    if(head.v>ls.v && head.v>rs.v && Math.abs(ls.v-rs.v)/ls.v<0.06){
+      const neckL=troughs.find(t=>t.i>ls.i&&t.i<head.i);
+      const neckR=troughs.find(t=>t.i>head.i&&t.i<rs.i);
+      if(neckL&&neckR&&currentPrice<Math.max(neckL.v,neckR.v)*1.02){
+        patterns.push({
+          cls:'bear', name:'頭肩頂', tag:'空方反轉',
+          desc:'股價出現三個高點，中間那個最高（頭部），兩邊各一個較低（肩部），像一個人頭加兩個肩膀。這是相對強烈的下跌訊號，漲勢可能即將結束。',
+          warn:'這個型態一旦確認，跌幅往往比較大，建議注意停損位置。'
+        });
+      }
+    }
+  }
+
+  // ── 頭肩底 ──────────────────────────────────────────────────
+  if(troughs.length>=3){
+    const [ls, head, rs] = troughs.slice(-3);
+    if(head.v<ls.v && head.v<rs.v && Math.abs(ls.v-rs.v)/ls.v<0.06){
+      const neckL=peaks.find(p=>p.i>ls.i&&p.i<head.i);
+      const neckR=peaks.find(p=>p.i>head.i&&p.i<rs.i);
+      if(neckL&&neckR&&currentPrice>Math.min(neckL.v,neckR.v)*0.98){
+        patterns.push({
+          cls:'bull', name:'頭肩底', tag:'多方反轉',
+          desc:'股價出現三個低點，中間那個最低（頭部），兩邊各一個較高（肩部）。這是相對可靠的反彈訊號，跌勢可能即將結束，準備往上。',
+          warn:'突破頸線且成交量放大，才是比較確定的反轉訊號。'
+        });
+      }
+    }
+  }
+
+  // ── 黃金交叉 ────────────────────────────────────────────────
+  if(n>=10){
+    const prevMA5  = mav(closes.slice(0,-1), 5);
+    const prevMA10 = mav(closes.slice(0,-1), 10);
+    if(prevMA5<=prevMA10 && ma5>ma10 && currentPrice>ma5){
+      patterns.push({
+        cls:'bull', name:'黃金交叉', tag:'多方訊號',
+        desc:'短期均線（5日）從下方穿越長期均線（10日），就像兩條線交叉出現金色的叉叉。這通常是短期行情轉強的訊號，代表近期買方力道增加。',
+        warn:'黃金交叉訊號出現後，還需要成交量配合放大，效果才比較好。'
+      });
+    }
+  }
+
+  // ── 死亡交叉 ────────────────────────────────────────────────
+  if(n>=10){
+    const prevMA5  = mav(closes.slice(0,-1), 5);
+    const prevMA10 = mav(closes.slice(0,-1), 10);
+    if(prevMA5>=prevMA10 && ma5<ma10 && currentPrice<ma5){
+      patterns.push({
+        cls:'bear', name:'死亡交叉', tag:'空方訊號',
+        desc:'短期均線（5日）從上方跌破長期均線（10日），像交叉出現陰暗的叉叉。這通常是短期行情轉弱的訊號，賣方力道開始增加。',
+        warn:'死亡交叉之後，股價往往還會繼續下跌一段，要注意控制風險。'
+      });
+    }
+  }
+
+  // ── 突破新高 ────────────────────────────────────────────────
+  if(n>=20 && closes.length>=20){
+    const prev20High = Math.max(...closes.slice(-21,-1));
+    if(currentPrice > prev20High * 1.01){
+      patterns.push({
+        cls:'bull', name:'突破近期高點', tag:'多方訊號',
+        desc:'股價今天突破了過去 20 天的最高點，就像打破了一道牆。突破後往往會吸引更多買家進場，行情可能繼續往上走。',
+        warn:'突破是否有效，要看成交量是否同步放大。若量不足，可能是假突破。'
+      });
+    }
+  }
+
+  // ── 跌破支撐 ────────────────────────────────────────────────
+  if(n>=20){
+    const prev20Low = Math.min(...closes.slice(-21,-1));
+    if(currentPrice < prev20Low * 0.99){
+      patterns.push({
+        cls:'bear', name:'跌破近期低點', tag:'空方訊號',
+        desc:'股價今天跌破了過去 20 天的最低點，就像地板被打穿了。這可能引發更多人停損賣出，行情有繼續下跌的風險。',
+        warn:'跌破支撐後通常會有一段跌勢，建議觀察成交量是否放大確認。'
+      });
+    }
+  }
+
+  // ── 上升趨勢 ────────────────────────────────────────────────
+  if(!patterns.length && n>=20){
+    const first10avg = closes.slice(-20,-10).reduce((a,b)=>a+b,0)/10;
+    const last10avg  = closes.slice(-10).reduce((a,b)=>a+b,0)/10;
+    if(last10avg > first10avg*1.03 && currentPrice>ma5 && ma5>ma20){
+      patterns.push({
+        cls:'bull', name:'上升趨勢', tag:'多方走勢',
+        desc:'股價近期呈現穩定上漲的走勢，就像緩緩往上走的爬山步道，均線也整齊地由下往上排列，整體趨勢偏向樂觀。',
+        warn:'趨勢向上不代表不會回檔，追高前記得注意買進的位置。'
+      });
+    }
+  }
+
+  // ── 下降趨勢 ────────────────────────────────────────────────
+  if(!patterns.length && n>=20){
+    const first10avg = closes.slice(-20,-10).reduce((a,b)=>a+b,0)/10;
+    const last10avg  = closes.slice(-10).reduce((a,b)=>a+b,0)/10;
+    if(last10avg < first10avg*0.97 && currentPrice<ma5 && ma5<ma20){
+      patterns.push({
+        cls:'bear', name:'下降趨勢', tag:'空方走勢',
+        desc:'股價近期持續往下走，就像一個緩緩往下的溜滑梯，均線也呈現從高往低的排列，整體走勢偏弱。',
+        warn:'下降趨勢中要特別小心，不要因為「感覺跌夠了」就輕易買進。'
+      });
+    }
+  }
+
+  // ── 箱型整理 ────────────────────────────────────────────────
+  if(!patterns.length && range/recentLow < 0.08){
+    patterns.push({
+      cls:'neut', name:'箱型整理', tag:'盤整',
+      desc:'股價在一個區間內上下來回震盪，就像在一個箱子裡跳上跳下，沒有明確的方向。通常是在等待一個方向，等待突破或跌破。',
+      warn:'盤整階段方向不明，建議等到明確突破後再做決定。'
+    });
+  }
+
+  return patterns;
+}
+
+// 渲染型態
+function renderPatterns(patterns, tw){
+  const el = document.getElementById('pattern-box');
+  if(!patterns.length){
+    el.innerHTML=`<div class="pat-none">目前走勢資料不足（需要至少 20 個交易日數據），無法辨識型態。</div>`;
+    return;
+  }
+  // 台股多方=紅，空方=綠；美股相反
+  function patCls(cls){
+    if(cls==='neut') return 'neut';
+    if(tw) return cls==='bull'?'bull':'bear';
+    return cls==='bull'?'bear':'bull'; // 美股顏色反轉
+  }
+  el.innerHTML = patterns.map(p => {
+    const c = patCls(p.cls);
+    return `<div class="pat-card ${c}">
+      <div class="pat-name ${c}">
+        ${p.name}
+        <span class="pat-tag ${c}">${p.tag}</span>
+      </div>
+      <div class="pat-desc">${p.desc}</div>
+      <div class="pat-warn">⚠️ ${p.warn}</div>
+    </div>`;
+  }).join('');
+}
 async function doSearch(){
   const sn=document.getElementById('inp').value.trim().toUpperCase();
   if(!sn)return;
@@ -520,6 +749,15 @@ async function doSearch(){
     document.getElementById('loading').style.display='none';
     document.getElementById('result').style.display='block';
     document.getElementById('tip').style.display='none';
+
+    // 型態辨識（台股有歷史數據才跑）
+    if(C.length >= 20){
+      const patterns = detectPatterns(closes, H, L, q.price);
+      renderPatterns(patterns, tw);
+    } else {
+      document.getElementById('pattern-box').innerHTML=
+        `<div class="pat-none">美股型態辨識需要歷史 K 線資料，目前版本僅支援台股。</div>`;
+    }
 
     fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
   }catch(e){
