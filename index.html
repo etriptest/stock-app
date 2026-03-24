@@ -7,187 +7,248 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f3ee; --card: #fff; --border: #e0dbd0;
-    --text: #1a1a1a; --dim: #666;
-    --up: #c0392b; --dn: #1a6b3c;
-    --up-bg: #fef0ee; --dn-bg: #eef6f1; --neu-bg: #f5f5f0;
+    /* 台灣股市：紅漲綠跌 */
+    --up:    #d0021b;   /* 上漲 → 紅 */
+    --dn:    #007a3d;   /* 下跌 → 綠 */
+    --up-bg: #fff0f0;
+    --dn-bg: #f0faf4;
+    --neu-bg:#f7f6f2;
+    /* 介面色 */
+    --bg:    #f4f2ed;
+    --card:  #ffffff;
+    --card2: #faf9f6;
+    --bd:    #e2ddd5;
+    --text:  #1a1a1a;
+    --dim:   #6b6460;
+    --navy:  #1e3a5f;
+    --navy2: #2a4f7a;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 18px; min-height: 100vh; padding-bottom: 40px; }
+  *  { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; min-height: 100vh; padding-bottom: 48px; }
 
-  .header { background: #2c3e50; color: #fff; padding: 18px 20px; text-align: center; }
-  .header h1 { font-size: 26px; font-weight: 700; letter-spacing: 2px; }
-  .header p  { font-size: 14px; color: #aab; margin-top: 4px; }
+  /* ── Header ── */
+  .hdr { background: var(--navy); color: #fff; padding: 16px 20px 14px; }
+  .hdr-inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .hdr-title { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  .hdr-sub   { font-size: 12px; color: #8eabc8; margin-top: 3px; }
+  .hdr-time  { font-size: 13px; color: #8eabc8; text-align: right; white-space: nowrap; }
 
-  .wrap { max-width: 680px; margin: 0 auto; padding: 0 12px; }
+  /* ── Wrap ── */
+  .W { max-width: 680px; margin: 0 auto; padding: 0 12px; }
 
-  /* Search */
-  .search-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-top: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-  .search-label { font-size: 16px; color: var(--dim); margin-bottom: 10px; }
-  .search-row { display: flex; gap: 8px; width: 100%; }
-  .search-input { flex: 1; min-width: 0; font-size: 20px; font-family: 'Noto Sans TC', sans-serif; padding: 12px 14px; border: 2px solid var(--border); border-radius: 12px; background: #fafaf8; color: var(--text); outline: none; transition: border-color .2s; width: 100%; }
-  .search-input:focus { border-color: #2c3e50; }
-  .search-input::placeholder { color: #bbb; font-size: 16px; }
-  .btn-search { flex-shrink: 0; padding: 12px 20px; font-size: 18px; font-family: 'Noto Sans TC', sans-serif; font-weight: 700; background: #2c3e50; color: #fff; border: none; border-radius: 12px; cursor: pointer; transition: background .2s; white-space: nowrap; }
-  .btn-search:hover { background: #3d5166; }
-  .btn-search:disabled { background: #aaa; cursor: not-allowed; }
-  .quick-label { font-size: 14px; color: var(--dim); margin: 12px 0 8px; }
-  .quick-row { display: flex; flex-wrap: wrap; gap: 7px; }
-  .quick-btn { padding: 7px 13px; border: 1px solid var(--border); border-radius: 30px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; background: #fafaf8; color: var(--text); cursor: pointer; transition: all .15s; }
-  .quick-btn:hover { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+  /* ── Search card ── */
+  .s-card { background: var(--card); border: 1px solid var(--bd); border-radius: 16px; padding: 16px; margin-top: 16px; box-shadow: 0 1px 8px rgba(0,0,0,.07); }
+  .s-label { font-size: 14px; color: var(--dim); margin-bottom: 10px; }
+  .s-row   { display: flex; gap: 8px; width: 100%; }
+  .s-inp   { flex: 1; min-width: 0; font-size: 20px; font-family: 'Noto Sans TC', sans-serif; padding: 11px 14px; border: 2px solid var(--bd); border-radius: 11px; background: var(--card2); color: var(--text); outline: none; transition: border-color .2s; }
+  .s-inp:focus { border-color: var(--navy); }
+  .s-inp::placeholder { color: #bbb; font-size: 16px; }
+  .s-btn   { flex-shrink: 0; padding: 11px 20px; font-size: 17px; font-family: 'Noto Sans TC', sans-serif; font-weight: 700; background: var(--navy); color: #fff; border: none; border-radius: 11px; cursor: pointer; transition: background .2s; white-space: nowrap; }
+  .s-btn:hover    { background: var(--navy2); }
+  .s-btn:disabled { background: #aaa; cursor: not-allowed; }
 
-  /* Loading */
-  .loading { display: none; text-align: center; padding: 32px; font-size: 18px; color: var(--dim); }
-  .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #2c3e50; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 14px; }
+  .q-label { font-size: 13px; color: var(--dim); margin: 12px 0 8px; }
+  .q-row   { display: flex; flex-wrap: wrap; gap: 7px; }
+  .q-btn   { padding: 6px 13px; border: 1px solid var(--bd); border-radius: 20px; font-size: 13px; font-family: 'Noto Sans TC', sans-serif; background: var(--card2); color: var(--text); cursor: pointer; transition: all .15s; }
+  .q-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  /* ── Loading ── */
+  .loading { display: none; text-align: center; padding: 28px 20px; font-size: 17px; color: var(--dim); }
+  .spinner { width: 36px; height: 36px; border: 4px solid #ddd; border-top-color: var(--navy); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .error-box { display: none; background: #fef0ee; border: 1px solid #f5c6c0; border-radius: 12px; padding: 16px 20px; margin-top: 20px; font-size: 17px; color: #c0392b; text-align: center; }
+  /* ── Error ── */
+  .err-box { display: none; background: var(--up-bg); border: 1px solid #f5c0c0; border-radius: 12px; padding: 14px 18px; margin-top: 16px; font-size: 16px; color: var(--up); text-align: center; }
 
-  .result { display: none; margin-top: 24px; }
+  /* ── Result ── */
+  .result { display: none; margin-top: 16px; }
 
   /* Price card */
-  .price-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 16px; }
-  .stock-meta { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-  .stock-name { font-size: 28px; font-weight: 700; }
-  .stock-code { font-size: 16px; color: var(--dim); background: #f0ede5; padding: 3px 10px; border-radius: 20px; }
-  .price-row { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 6px; flex-wrap: wrap; }
-  .price-num { font-size: 60px; font-weight: 700; line-height: 1; }
-  .price-num.up { color: var(--up); } .price-num.dn { color: var(--dn); } .price-num.neu { color: var(--text); }
-  .price-sub { font-size: 22px; font-weight: 500; }
-  .price-sub.up { color: var(--up); } .price-sub.dn { color: var(--dn); }
-  .ohlv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
-  .ohlv-item { background: #fafaf8; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; text-align: center; }
-  .ohlv-label { font-size: 13px; color: var(--dim); margin-bottom: 3px; }
-  .ohlv-value { font-size: 17px; font-weight: 500; }
+  .p-card { background: var(--card); border: 1px solid var(--bd); border-radius: 16px; padding: 20px; box-shadow: 0 1px 8px rgba(0,0,0,.07); margin-bottom: 12px; }
+  .p-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .p-name { font-size: 26px; font-weight: 700; }
+  .p-code { font-size: 14px; color: var(--dim); background: var(--card2); border: 1px solid var(--bd); padding: 3px 10px; border-radius: 20px; }
+  .p-ex   { font-size: 13px; color: var(--dim); }
 
-  /* Traffic light section */
-  .lights-title { font-size: 15px; font-weight: 700; color: var(--dim); margin-bottom: 12px; letter-spacing: 1px; }
-  .lights-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-  .light-row { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 6px rgba(0,0,0,.04); display: flex; align-items: center; gap: 14px; }
-  .light-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
-  .light-dot.red    { background: #e74c3c; box-shadow: 0 0 8px rgba(231,76,60,.4); }
-  .light-dot.green  { background: #27ae60; box-shadow: 0 0 8px rgba(39,174,96,.4); }
-  .light-dot.yellow { background: #f39c12; box-shadow: 0 0 8px rgba(243,156,18,.4); }
-  .light-label { font-size: 14px; color: var(--dim); margin-bottom: 3px; }
-  .light-text  { font-size: 17px; font-weight: 500; line-height: 1.4; }
+  .p-main { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .p-num  { font-size: 56px; font-weight: 700; line-height: 1; }
+  .p-num.up  { color: var(--up); }
+  .p-num.dn  { color: var(--dn); }
+  .p-num.neu { color: var(--text); }
+  .p-chg  { font-size: 20px; font-weight: 500; }
+  .p-chg.up  { color: var(--up); }
+  .p-chg.dn  { color: var(--dn); }
 
-  /* Main analysis */
-  .analysis-card { border-radius: 16px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 16px; }
-  .analysis-card.up  { background: var(--up-bg); border: 1px solid #f5c6c0; }
-  .analysis-card.dn  { background: var(--dn-bg); border: 1px solid #b8ddc8; }
-  .analysis-card.neu { background: var(--neu-bg); border: 1px solid var(--border); }
-  .sig-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .sig-icon   { font-size: 36px; }
-  .sig-title  { font-size: 24px; font-weight: 700; }
-  .sig-title.up { color: var(--up); } .sig-title.dn { color: var(--dn); } .sig-title.neu { color: #444; }
-  .sig-body   { font-size: 18px; line-height: 1.9; color: var(--text); }
-  .sig-body p { margin-bottom: 10px; }
-  .sig-body p:last-child { margin-bottom: 0; }
+  .p-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .p-cell { background: var(--card2); border: 1px solid var(--bd); border-radius: 10px; padding: 8px 10px; text-align: center; }
+  .p-cell-l { font-size: 12px; color: var(--dim); margin-bottom: 3px; }
+  .p-cell-v { font-size: 16px; font-weight: 500; }
 
-  /* Tip box */
-  .tip-box { background: #fffbec; border: 1px solid #f0e4a8; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; font-size: 16px; line-height: 1.8; color: #5a4a00; }
-  .tip-box strong { color: #b8860b; font-size: 17px; }
+  /* Lights */
+  .sec-title { font-size: 13px; font-weight: 700; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; margin: 18px 0 10px; }
+  .lights    { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
+  .light-row { background: var(--card); border: 1px solid var(--bd); border-radius: 13px; padding: 13px 15px; display: flex; align-items: center; gap: 13px; box-shadow: 0 1px 5px rgba(0,0,0,.04); }
+  .l-dot  { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .l-dot.red    { background: var(--up); box-shadow: 0 0 7px rgba(208,2,27,.35); }
+  .l-dot.green  { background: var(--dn); box-shadow: 0 0 7px rgba(0,122,61,.35); }
+  .l-dot.yellow { background: #c8840a; box-shadow: 0 0 7px rgba(200,132,10,.35); }
+  .l-lbl  { font-size: 12px; color: var(--dim); margin-bottom: 3px; }
+  .l-txt  { font-size: 15px; font-weight: 500; line-height: 1.45; color: var(--text); }
+
+  /* Analysis */
+  .a-card { border-radius: 16px; padding: 20px; box-shadow: 0 1px 8px rgba(0,0,0,.07); margin-bottom: 12px; }
+  .a-card.up  { background: var(--up-bg); border: 1px solid #f5c0c0; }
+  .a-card.dn  { background: var(--dn-bg); border: 1px solid #a8d9bc; }
+  .a-card.neu { background: var(--neu-bg); border: 1px solid var(--bd); }
+  .a-hdr  { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .a-ico  { font-size: 32px; }
+  .a-ttl  { font-size: 22px; font-weight: 700; }
+  .a-ttl.up  { color: var(--up); }
+  .a-ttl.dn  { color: var(--dn); }
+  .a-ttl.neu { color: #444; }
+  .a-bdy  { font-size: 16px; line-height: 1.9; color: var(--text); }
+  .a-bdy p { margin-bottom: 8px; }
+  .a-bdy p:last-child { margin-bottom: 0; }
+
+  /* Tip */
+  .tip { background: #fffbec; border: 1px solid #edd98a; border-radius: 13px; padding: 14px 16px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; color: #5a4500; display: none; }
+  .tip strong { color: #b07800; }
 
   /* Disclaimer */
-  .disclaimer { background: #f5f5f0; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-size: 14px; color: #888; line-height: 1.7; text-align: center; }
+  .disc { background: var(--card2); border: 1px solid var(--bd); border-radius: 11px; padding: 12px 16px; font-size: 13px; color: #999; line-height: 1.7; text-align: center; }
 
-  /* Watchlist */
-  .section-title { font-size: 16px; color: var(--dim); margin: 28px 0 12px; font-weight: 500; }
-  .watch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .watch-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; cursor: pointer; transition: box-shadow .2s, border-color .2s; box-shadow: 0 1px 6px rgba(0,0,0,.04); }
-  .watch-card:hover { border-color: #2c3e50; box-shadow: 0 3px 14px rgba(0,0,0,.1); }
-  .wc-name  { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-  .wc-code  { font-size: 13px; color: var(--dim); margin-bottom: 10px; }
-  .wc-price { font-size: 26px; font-weight: 700; }
-  .wc-price.up { color: var(--up); } .wc-price.dn { color: var(--dn); }
-  .wc-chg   { font-size: 15px; margin-top: 3px; }
-  .wc-chg.up { color: var(--up); } .wc-chg.dn { color: var(--dn); }
-  .wc-skel  { height: 48px; background: linear-gradient(90deg,#f0ede5 25%,#e8e4da 50%,#f0ede5 75%); background-size: 200% 100%; animation: shim 1.5s infinite; border-radius: 6px; margin-top: 6px; }
+  /* Watch grid */
+  .watch-hdr { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 10px; }
+  .watch-hdr-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .watch-hdr-sub   { font-size: 13px; color: var(--dim); }
+  .w-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 9px; }
+  .w-card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 14px; cursor: pointer; transition: box-shadow .2s, border-color .2s, transform .15s; box-shadow: 0 1px 5px rgba(0,0,0,.05); }
+  .w-card:hover  { border-color: var(--navy); box-shadow: 0 3px 14px rgba(0,0,0,.1); transform: translateY(-1px); }
+  .w-card:active { transform: scale(.98); }
+  .w-name { font-size: 15px; font-weight: 700; margin-bottom: 1px; }
+  .w-code { font-size: 12px; color: var(--dim); margin-bottom: 9px; }
+  .w-price { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .w-price.up  { color: var(--up); }
+  .w-price.dn  { color: var(--dn); }
+  .w-price.neu { color: var(--text); }
+  .w-chg  { font-size: 13px; margin-top: 3px; font-weight: 500; }
+  .w-chg.up  { color: var(--up); }
+  .w-chg.dn  { color: var(--dn); }
+  .w-skel { height: 44px; background: linear-gradient(90deg, var(--card2) 25%, var(--bd) 50%, var(--card2) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; border-radius: 8px; margin-top: 6px; }
   @keyframes shim { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
+  /* Color legend */
+  .legend { display: flex; gap: 16px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── RWD ── */
   @media(max-width:480px){
     body { font-size: 16px; }
-    .header h1 { font-size: 22px; }
-    .price-num { font-size: 44px; }
-    .price-sub { font-size: 18px; }
-    .stock-name { font-size: 22px; }
-    .sig-title { font-size: 20px; }
-    .sig-body { font-size: 16px; }
-    .ohlv { grid-template-columns: repeat(3,1fr); }
-    .price-card { padding: 16px; }
-    .analysis-card { padding: 16px 18px; }
-    .light-row { padding: 12px 14px; }
-    .light-text { font-size: 15px; }
+    .hdr-title { font-size: 19px; }
+    .p-num  { font-size: 44px; }
+    .p-chg  { font-size: 17px; }
+    .p-name { font-size: 22px; }
+    .a-ttl  { font-size: 19px; }
+    .a-bdy  { font-size: 15px; }
+    .l-txt  { font-size: 14px; }
+    .p-card { padding: 15px; }
+    .a-card { padding: 15px; }
+    .w-price{ font-size: 21px; }
   }
   @media(max-width:360px){
-    .price-num { font-size: 36px; }
-    .wc-price { font-size: 20px; }
+    .p-num  { font-size: 36px; }
+    .w-grid { grid-template-columns: 1fr 1fr; gap: 7px; }
+    .w-price{ font-size: 19px; }
+    .s-btn  { padding: 11px 14px; font-size: 15px; }
   }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📈 股票查詢</h1>
-  <p>輸入代號，簡單看懂今天的股票狀況</p>
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div>
+      <div class="hdr-title">📈 股票查詢</div>
+      <div class="hdr-sub">輸入代號，簡單看懂今天的股票狀況</div>
+    </div>
+    <div class="hdr-time" id="clk">--:--</div>
+  </div>
 </div>
 
-<div class="wrap">
+<div class="W">
 
-  <div class="search-card">
-    <div class="search-label">請輸入股票代號</div>
-    <div class="search-row">
-      <input class="search-input" id="inp" type="text" inputmode="numeric"
+  <!-- Search -->
+  <div class="s-card">
+    <div class="s-label">請輸入股票代號</div>
+    <div class="s-row">
+      <input class="s-inp" id="inp" type="text" inputmode="numeric"
              placeholder="例如：2330" maxlength="6" />
-      <button class="btn-search" id="sbtn" onclick="doSearch()">查詢</button>
+      <button class="s-btn" id="sbtn" onclick="doSearch()">查詢</button>
     </div>
-    <div class="quick-label">常用個股</div>
-    <div class="quick-row" id="quick-row"></div>
+    <div class="q-label">常用個股</div>
+    <div class="q-row" id="qrow"></div>
   </div>
 
+  <!-- Loading -->
   <div class="loading" id="loading">
-    <div class="spinner"></div>
-    查詢中，請稍候…
+    <div class="spinner"></div>查詢中，請稍候…
   </div>
 
-  <div class="error-box" id="errbox"></div>
+  <!-- Error -->
+  <div class="err-box" id="errbox"></div>
 
+  <!-- Result -->
   <div class="result" id="result">
 
-    <div class="price-card" id="price-card"></div>
+    <!-- Price -->
+    <div class="p-card" id="pcrd"></div>
 
     <!-- Traffic lights -->
-    <div class="lights-title">📊 技術訊號一覽</div>
-    <div class="lights-grid" id="lights-grid"></div>
+    <div class="sec-title">技術訊號說明</div>
+    <div class="lights" id="lights"></div>
 
-    <!-- Main AI analysis -->
-    <div class="analysis-card neu" id="analysis-card">
-      <div class="sig-header">
-        <div class="sig-icon" id="sig-icon">🔍</div>
-        <div class="sig-title neu" id="sig-title">整體解讀中…</div>
+    <!-- AI summary -->
+    <div class="a-card neu" id="acrd">
+      <div class="a-hdr">
+        <div class="a-ico" id="aico">🔍</div>
+        <div class="a-ttl neu" id="attl">整體解讀中…</div>
       </div>
-      <div class="sig-body" id="sig-body">
-        <div class="wc-skel" style="margin-bottom:10px"></div>
-        <div class="wc-skel" style="width:80%;margin-bottom:10px"></div>
-        <div class="wc-skel" style="width:65%"></div>
+      <div class="a-bdy" id="abdy">
+        <div class="w-skel" style="margin-bottom:9px"></div>
+        <div class="w-skel" style="width:80%;margin-bottom:9px"></div>
+        <div class="w-skel" style="width:60%"></div>
       </div>
     </div>
 
     <!-- Tip -->
-    <div class="tip-box" id="tip-box" style="display:none"></div>
+    <div class="tip" id="tip"></div>
 
-    <div class="disclaimer">
+    <!-- Disclaimer -->
+    <div class="disc">
       資料來源：台灣證交所，盤中約延遲 5 分鐘。<br>
       以上說明僅供參考，投資請自行判斷，風險自負。
     </div>
+
   </div>
 
-  <div class="section-title">熱門個股 <span style="font-size:13px;font-weight:400">— 點擊可查詢</span></div>
-  <div class="watch-grid" id="watch-grid"></div>
+  <!-- Watchlist -->
+  <div class="watch-hdr">
+    <div class="watch-hdr-title">熱門個股</div>
+    <div class="watch-hdr-sub">點擊可查詢</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--up)"></div>紅色＝上漲</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--dn)"></div>綠色＝下跌</div>
+  </div>
+  <div class="w-grid" id="wgrid"></div>
 
 </div>
 
 <script>
+// ── Data ─────────────────────────────────────────────────────
 const WATCH = [
   {c:'2330',n:'台積電'},{c:'2317',n:'鴻海'},
   {c:'2454',n:'聯發科'},{c:'0050',n:'元大台灣50'},
@@ -198,36 +259,37 @@ const QUICK = [
   {c:'0050',n:'台灣50'},{c:'0056',n:'高股息'},{c:'2308',n:'台達電'},
 ];
 
-// Quick buttons
-document.getElementById('quick-row').innerHTML = QUICK.map(q =>
-  `<button class="quick-btn" onclick="setAndSearch('${q.c}')">${q.c} ${q.n}</button>`
+// ── Clock ─────────────────────────────────────────────────────
+function tick(){ document.getElementById('clk').textContent = new Date().toLocaleTimeString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit'}); }
+setInterval(tick,1000); tick();
+
+// ── Quick buttons ─────────────────────────────────────────────
+document.getElementById('qrow').innerHTML = QUICK.map(q=>
+  `<button class="q-btn" onclick="go('${q.c}')">${q.c} ${q.n}</button>`
 ).join('');
 
-function setAndSearch(code) {
-  document.getElementById('inp').value = code;
-  doSearch();
-}
-
-// Watchlist skeletons
-const wg = document.getElementById('watch-grid');
-WATCH.forEach(w => {
-  const d = document.createElement('div');
-  d.className = 'watch-card'; d.id = 'wc-' + w.c;
-  d.onclick = () => setAndSearch(w.c);
-  d.innerHTML = `<div class="wc-name">${w.n}</div><div class="wc-code">${w.c}</div><div class="wc-skel"></div>`;
+// ── Watchlist skeletons ───────────────────────────────────────
+const wg = document.getElementById('wgrid');
+WATCH.forEach(w=>{
+  const d=document.createElement('div');
+  d.className='w-card'; d.id='wc-'+w.c;
+  d.onclick=()=>go(w.c);
+  d.innerHTML=`<div class="w-name">${w.n}</div><div class="w-code">${w.c}</div><div class="w-skel"></div>`;
   wg.appendChild(d);
 });
 
+function go(code){ document.getElementById('inp').value=code; doSearch(); }
+
 // ── Tech math ─────────────────────────────────────────────────
-function calcRSI(c, p=14) {
-  if (c.length < p+1) return null;
+function rsi(c,p=14){
+  if(c.length<p+1)return null;
   let g=0,l=0;
   for(let i=1;i<=p;i++){const d=c[i]-c[i-1];d>0?g+=d:l+=Math.abs(d);}
   let ag=g/p,al=l/p;
   for(let i=p+1;i<c.length;i++){const d=c[i]-c[i-1];ag=(ag*(p-1)+(d>0?d:0))/p;al=(al*(p-1)+(d<0?Math.abs(d):0))/p;}
   return al===0?100:+(100-100/(1+ag/al)).toFixed(1);
 }
-function calcKD(h,l,c,p=9){
+function kd(h,l,c,p=9){
   if(c.length<p)return{k:50,d:50};
   let k=50,d=50;
   for(let i=p-1;i<c.length;i++){
@@ -238,238 +300,195 @@ function calcKD(h,l,c,p=9){
   }
   return{k:+k.toFixed(1),d:+d.toFixed(1)};
 }
-function ema(arr,p){const k=2/(p+1);let e=arr[0];for(let i=1;i<arr.length;i++)e=arr[i]*k+e*(1-k);return e;}
-function maAvg(arr,p){const s=arr.slice(-p);return+(s.reduce((a,b)=>a+b,0)/s.length).toFixed(1);}
+function ema(a,p){const k=2/(p+1);let e=a[0];for(let i=1;i<a.length;i++)e=a[i]*k+e*(1-k);return e;}
+function mav(a,p){const s=a.slice(-p);return+(s.reduce((x,y)=>x+y,0)/s.length).toFixed(1);}
 
-// ── Plain Chinese interpretations ─────────────────────────────
-function interpretRSI(v) {
-  if (v === null || v === '–') return { dot:'yellow', text:'目前資料不足，無法判斷' };
-  if (v >= 80) return { dot:'red',    text:'漲太多了，很多人想賣出獲利，要小心追高' };
-  if (v >= 70) return { dot:'red',    text:'漲得有點過頭，短期可能會回跌喘口氣' };
-  if (v >= 50) return { dot:'green',  text:'目前漲勢正常，買方力道比較強' };
-  if (v >= 30) return { dot:'yellow', text:'目前走勢普通，買賣雙方差不多' };
-  if (v >= 20) return { dot:'green',  text:'跌得有點多，可能快要止跌反彈了' };
-  return               { dot:'green',  text:'跌太多了，超賣狀態，反彈機率提高' };
+// ── Plain Chinese ─────────────────────────────────────────────
+function iRSI(v){
+  if(!v||v==='–')return{dot:'yellow',txt:'目前資料不足，無法判斷'};
+  if(v>=80)return{dot:'red',   txt:'漲太多了，很多人想賣出獲利，要小心追高'};
+  if(v>=70)return{dot:'red',   txt:'漲得有點過頭，短期可能會回跌喘口氣'};
+  if(v>=50)return{dot:'red',   txt:'目前漲勢正常，買方力道比較強'};
+  if(v>=30)return{dot:'yellow',txt:'目前走勢普通，買賣雙方差不多'};
+  if(v>=20)return{dot:'green', txt:'跌得有點多，可能快要止跌反彈了'};
+  return           {dot:'green', txt:'跌太多了，反彈機率提高'};
 }
-function interpretKD(k, d) {
-  if (k > 80)  return { dot:'red',    text:'高檔區間，漲勢可能快到頂，注意風險' };
-  if (k < 20)  return { dot:'green',  text:'低檔區間，跌勢可能快到底，有反彈機會' };
-  if (k > d)   return { dot:'green',  text:'買方訊號出現，走勢開始往上' };
-  if (k < d)   return { dot:'red',    text:'賣方訊號出現，走勢偏向下跌' };
-  return               { dot:'yellow', text:'訊號不明確，觀望為主' };
+function iKD(k,d){
+  if(k>80) return{dot:'red',   txt:'漲勢可能快到頂，注意風險'};
+  if(k<20) return{dot:'green', txt:'跌勢可能快到底，有反彈機會'};
+  if(k>d)  return{dot:'red',   txt:'買方訊號出現，走勢開始往上'};
+  return          {dot:'green', txt:'賣方訊號出現，走勢偏向下跌'};
 }
-function interpretMACD(val) {
-  if (val > 2)  return { dot:'green',  text:'上漲動能很強，漲勢持續中' };
-  if (val > 0)  return { dot:'green',  text:'有一點上漲的力道，偏多方走勢' };
-  if (val > -2) return { dot:'red',    text:'有一點下跌的力道，偏空方走勢' };
-  return               { dot:'red',    text:'下跌動能明顯，跌勢還在持續' };
+function iMACD(v){
+  if(v>2)  return{dot:'red',   txt:'上漲動能很強，漲勢持續中'};
+  if(v>0)  return{dot:'red',   txt:'有一點上漲的力道，偏多方走勢'};
+  if(v>-2) return{dot:'green', txt:'有一點下跌的力道，偏空方走勢'};
+  return          {dot:'green', txt:'下跌動能明顯，跌勢還在持續'};
 }
-function interpretMA(price, ma5, ma20) {
-  if (price > ma5 && price > ma20 && ma5 > ma20)
-    return { dot:'green',  text:'短中期都在漲，是比較強的上升趨勢' };
-  if (price < ma5 && price < ma20 && ma5 < ma20)
-    return { dot:'red',    text:'短中期都在跌，是比較弱的下跌趨勢' };
-  if (price > ma5 && price > ma20)
-    return { dot:'green',  text:'目前站在均線上方，走勢偏強' };
-  if (price < ma5 && price < ma20)
-    return { dot:'red',    text:'目前跌到均線下方，走勢偏弱' };
-  return { dot:'yellow',   text:'均線交叉糾結中，方向還不確定' };
+function iMA(price,ma5,ma20){
+  if(price>ma5&&price>ma20&&ma5>ma20)return{dot:'red',   txt:'短中期都在漲，是比較強的上升走勢'};
+  if(price<ma5&&price<ma20&&ma5<ma20)return{dot:'green', txt:'短中期都在跌，是比較弱的下跌走勢'};
+  if(price>ma5&&price>ma20)          return{dot:'red',   txt:'目前站在均線上方，走勢偏強'};
+  if(price<ma5&&price<ma20)          return{dot:'green', txt:'目前跌到均線下方，走勢偏弱'};
+  return                              {dot:'yellow',      txt:'走勢方向還不確定，觀望為主'};
 }
-function interpretVol(ratio) {
-  if (ratio === '–' || !ratio) return { dot:'yellow', text:'成交量資料不足' };
-  if (ratio >= 2)   return { dot:'green',  text:`成交量是平常的 ${ratio} 倍，有大量資金進出，值得關注` };
-  if (ratio >= 1.3) return { dot:'green',  text:`成交量比平常多一些（${ratio} 倍），市場有在動` };
-  if (ratio >= 0.7) return { dot:'yellow', text:`成交量正常（${ratio} 倍），市場沒有特別異動` };
-  return                    { dot:'yellow', text:`成交量偏少（${ratio} 倍），市場觀望，買賣都不積極` };
+function iVol(r){
+  if(!r||r==='–')return{dot:'yellow',txt:'成交量資料不足'};
+  if(r>=2)  return{dot:'red',   txt:`成交量是平常的 ${r} 倍，有大量資金進出，值得關注`};
+  if(r>=1.3)return{dot:'yellow',txt:`成交量比平常多一些，市場有在動`};
+  if(r>=0.7)return{dot:'yellow',txt:`成交量正常，市場沒有特別異動`};
+  return           {dot:'yellow',txt:`成交量偏少，市場觀望，買賣都不積極`};
 }
 
-function dotColor(dot) {
-  return dot === 'green' ? '#27ae60' : dot === 'red' ? '#e74c3c' : '#f39c12';
-}
+// ── Color helper ──────────────────────────────────────────────
+// 台灣：紅=漲 綠=跌
+function upDn(pct){ return pct>0?'up':pct<0?'dn':'neu'; }
+function arrow(pct){ return pct>0?'▲':pct<0?'▼':'－'; }
+function dotC(dot){ return dot==='red'?'var(--up)':dot==='green'?'var(--dn)':'#c8840a'; }
 
 // ── Main search ───────────────────────────────────────────────
-async function doSearch(code) {
-  const inp = document.getElementById('inp');
-  const sn  = (code || inp.value).replace(/\s/g,'');
-  if (!sn) return;
-  inp.value = sn;
+async function doSearch(){
+  const sn=document.getElementById('inp').value.replace(/\s/g,'');
+  if(!sn)return;
+  document.getElementById('loading').style.display='block';
+  document.getElementById('result').style.display='none';
+  document.getElementById('errbox').style.display='none';
+  document.getElementById('sbtn').disabled=true;
 
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('result').style.display  = 'none';
-  document.getElementById('errbox').style.display  = 'none';
-  document.getElementById('sbtn').disabled = true;
-
-  try {
-    const [qRes, hRes] = await Promise.all([
-      fetch(`/api/quote/${sn}`),
-      fetch(`/api/history/${sn}`)
-    ]);
-    const q = await qRes.json();
-    if (!q.ok) throw new Error(q.error || '查詢失敗，請確認代號是否正確');
-
-    const hData  = await hRes.json();
-    const rows   = hData.data || [];
-    const closes = rows.map(r => r.close);
-    const highs  = rows.map(r => r.high);
-    const lows   = rows.map(r => r.low);
-    const vols   = rows.map(r => r.volume);
-
-    const allC  = [...closes, q.price];
-    const allH  = [...highs,  q.high || q.price];
-    const allL  = [...lows,   q.low  || q.price];
-    const rsiV  = calcRSI(allC);
-    const {k,d} = calcKD(allH, allL, allC);
-    const ma5v  = maAvg(allC, 5);
-    const ma20v = maAvg(allC, 20);
-    const macdV = allC.length >= 26 ? +(ema(allC,12) - ema(allC,26)).toFixed(2) : 0;
-    const avgV  = vols.slice(-20).reduce((a,b)=>a+b,0) / Math.max(1, vols.slice(-20).length);
-    const volR  = avgV > 0 ? +(q.volume / avgV).toFixed(1) : '–';
-
-    const up  = q.changePct > 0, dn = q.changePct < 0;
-    const cls = up ? 'up' : dn ? 'dn' : 'neu';
-    const arrow = up ? '▲' : dn ? '▼' : '－';
+  try{
+    const [qr,hr]=await Promise.all([fetch(`/api/quote/${sn}`),fetch(`/api/history/${sn}`)]);
+    const q=await qr.json();
+    if(!q.ok)throw new Error(q.error||'查詢失敗，請確認代號是否正確');
+    const h=await hr.json();
+    const rows=h.data||[];
+    const C=rows.map(r=>r.close),H=rows.map(r=>r.high),L=rows.map(r=>r.low),V=rows.map(r=>r.volume);
+    const aC=[...C,q.price],aH=[...H,q.high||q.price],aL=[...L,q.low||q.price];
+    const rv=rsi(aC);
+    const {k,d}=kd(aH,aL,aC);
+    const ma5=mav(aC,5),ma20=mav(aC,20);
+    const mc=aC.length>=26?+(ema(aC,12)-ema(aC,26)).toFixed(2):0;
+    const avgV=V.slice(-20).reduce((a,b)=>a+b,0)/Math.max(1,V.slice(-20).length);
+    const vr=avgV>0?+(q.volume/avgV).toFixed(1):'–';
+    const cls=upDn(q.changePct);
 
     // ── Price card ────────────────────────────────────────────
-    document.getElementById('price-card').innerHTML = `
-      <div class="stock-meta">
-        <div class="stock-name">${q.name}</div>
-        <div class="stock-code">${q.code} ${q.exchange}</div>
+    document.getElementById('pcrd').innerHTML=`
+      <div class="p-meta">
+        <div class="p-name">${q.name}</div>
+        <div class="p-code">${q.code}</div>
+        <div class="p-ex">${q.exchange}</div>
       </div>
-      <div class="price-row">
-        <div class="price-num ${cls}">${q.price.toLocaleString()}</div>
+      <div class="p-main">
+        <div class="p-num ${cls}">${q.price.toLocaleString()}</div>
         <div>
-          <div class="price-sub ${cls}">${arrow} ${Math.abs(q.change).toFixed(2)} 元</div>
-          <div class="price-sub ${cls}">${q.changePct > 0 ? '+' : ''}${q.changePct}%</div>
+          <div class="p-chg ${cls}">${arrow(q.changePct)} ${Math.abs(q.change).toFixed(2)} 元</div>
+          <div class="p-chg ${cls}">${q.changePct>0?'+':''}${q.changePct}%</div>
         </div>
       </div>
-      <div class="ohlv">
-        <div class="ohlv-item"><div class="ohlv-label">開盤</div><div class="ohlv-value">${q.open || '–'}</div></div>
-        <div class="ohlv-item"><div class="ohlv-label">最高</div><div class="ohlv-value" style="color:var(--up)">${q.high || '–'}</div></div>
-        <div class="ohlv-item"><div class="ohlv-label">最低</div><div class="ohlv-value" style="color:var(--dn)">${q.low || '–'}</div></div>
+      <div class="p-grid">
+        <div class="p-cell"><div class="p-cell-l">開盤</div><div class="p-cell-v">${q.open||'–'}</div></div>
+        <div class="p-cell"><div class="p-cell-l">最高</div><div class="p-cell-v" style="color:var(--up)">${q.high||'–'}</div></div>
+        <div class="p-cell"><div class="p-cell-l">最低</div><div class="p-cell-v" style="color:var(--dn)">${q.low||'–'}</div></div>
       </div>`;
 
-    // ── Traffic lights ────────────────────────────────────────
-    const rsiI  = interpretRSI(rsiV);
-    const kdI   = interpretKD(k, d);
-    const macdI = interpretMACD(macdV);
-    const maI   = interpretMA(q.price, ma5v, ma20v);
-    const volI  = interpretVol(volR);
-
-    const lights = [
-      { label: '💹 漲跌動能', ...rsiI },
-      { label: '📉 買賣訊號', ...kdI  },
-      { label: '⚡ 趨勢力道', ...macdI },
-      { label: '📏 均線位置', ...maI  },
-      { label: '🔊 成交量',   ...volI },
-    ];
-
-    document.getElementById('lights-grid').innerHTML = lights.map(l => `
+    // ── Lights ────────────────────────────────────────────────
+    const ri=iRSI(rv),ki=iKD(k,d),mi=iMACD(mc),mai=iMA(q.price,ma5,ma20),vi=iVol(vr);
+    document.getElementById('lights').innerHTML=[
+      {lbl:'💹 漲跌動能',...ri},
+      {lbl:'📉 買賣訊號',...ki},
+      {lbl:'⚡ 趨勢力道',...mi},
+      {lbl:'📏 均線位置',...mai},
+      {lbl:'🔊 成交量',  ...vi},
+    ].map(l=>`
       <div class="light-row">
-        <div class="light-dot" style="background:${dotColor(l.dot)};box-shadow:0 0 8px ${dotColor(l.dot)}88"></div>
-        <div>
-          <div class="light-label">${l.label}</div>
-          <div class="light-text">${l.text}</div>
-        </div>
+        <div class="l-dot ${l.dot}" style="background:${dotC(l.dot)};box-shadow:0 0 7px ${dotC(l.dot)}66"></div>
+        <div><div class="l-lbl">${l.lbl}</div><div class="l-txt">${l.txt}</div></div>
       </div>`).join('');
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('result').style.display  = 'block';
-    document.getElementById('tip-box').style.display = 'none';
+    document.getElementById('loading').style.display='none';
+    document.getElementById('result').style.display='block';
+    document.getElementById('tip').style.display='none';
 
-    // ── AI plain Chinese summary ──────────────────────────────
-    fetchAI(q, { rsiV, k, d, macdV, ma5v, ma20v, volR,
-      rsiText: rsiI.text, kdText: kdI.text, macdText: macdI.text, maText: maI.text, volText: volI.text });
+    // ── AI ────────────────────────────────────────────────────
+    fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt});
 
-  } catch(e) {
-    document.getElementById('loading').style.display = 'none';
-    const eb = document.getElementById('errbox');
-    eb.textContent = '❌ ' + e.message;
-    eb.style.display = 'block';
-  } finally {
-    document.getElementById('sbtn').disabled = false;
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    const eb=document.getElementById('errbox');
+    eb.textContent='❌ '+e.message;
+    eb.style.display='block';
+  }finally{
+    document.getElementById('sbtn').disabled=false;
   }
 }
 
-// ── AI summary ────────────────────────────────────────────────
-async function fetchAI(q, ind) {
-  const up = q.changePct > 0, dn = q.changePct < 0;
-  const cls = up ? 'up' : dn ? 'dn' : 'neu';
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        system: `你是幫助台灣長輩看懂股票的助理。用非常口語、溫和的白話文說明，像鄰居朋友在聊天一樣。
-不要用任何數字或技術術語。不給買賣建議。
-輸出純JSON：
-{"icon":"一個表情符號","title":"今天這支股票用一句話說（15字內）","summary":"用2-3句話說明今天整體狀況（像在跟長輩聊天）","tip":"下單前要注意的一件事（一句話，溫和提醒）","signal":"UP或DOWN或FLAT"}`,
-        messages:[{ role:'user', content:
-          `${q.name}今天${up?'漲':'跌'}${Math.abs(q.changePct)}%。
-漲跌動能訊號：${ind.rsiText}
-買賣訊號：${ind.kdText}
-趨勢力道：${ind.macdText}
-均線位置：${ind.maText}
-成交量狀況：${ind.volText}
-請用白話文整理給長輩聽。` }]
+async function fetchAI(q,ind){
+  const cls=upDn(q.changePct);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',max_tokens:500,
+        system:`你是幫助台灣長輩看懂股票的助理。用非常口語、溫和的白話文說明，像鄰居朋友聊天。不用數字或術語。不給買賣建議。
+輸出純JSON：{"icon":"一個表情","title":"今天這支股票一句話（15字內）","summary":"2-3句話說明今天整體狀況","tip":"下單前一個溫和提醒（一句話）","signal":"UP或DOWN或FLAT"}`,
+        messages:[{role:'user',content:
+          `${q.name}今天${q.changePct>0?'上漲':'下跌'}${Math.abs(q.changePct)}%。
+漲跌動能：${ind.riT}
+買賣訊號：${ind.kiT}
+趨勢力道：${ind.miT}
+均線位置：${ind.maiT}
+成交量：${ind.viT}
+請用白話文整理給長輩聽。`}]
       })
     });
-    const data = await res.json();
-    const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const m = text.match(/\{[\s\S]*?\}/);
-    if (!m) throw new Error('parse');
-    const ai = JSON.parse(m[0]);
-    const s = { UP:{c:'up'}, DOWN:{c:'dn'}, FLAT:{c:'neu'} }[ai.signal] || {c:'neu'};
-
-    const ac = document.getElementById('analysis-card');
-    ac.className = 'analysis-card ' + s.c;
-    document.getElementById('sig-icon').textContent = ai.icon || (up?'📈':dn?'📉':'📊');
-    const st = document.getElementById('sig-title');
-    st.textContent = ai.title || (up?'今天走勢偏強':dn?'今天走勢偏弱':'今天小幅震盪');
-    st.className = 'sig-title ' + s.c;
-    document.getElementById('sig-body').innerHTML =
-      (ai.summary||'').split(/[。\n]/).filter(Boolean).map(p=>`<p>${p.trim()}。</p>`).join('');
-
-    if (ai.tip) {
-      const tb = document.getElementById('tip-box');
-      tb.innerHTML = `<strong>⚠️ 下單前提醒：</strong>${ai.tip}`;
-      tb.style.display = 'block';
+    const data=await res.json();
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m=txt.match(/\{[\s\S]*?\}/);
+    if(!m)throw new Error('parse');
+    const ai=JSON.parse(m[0]);
+    const sc={UP:'up',DOWN:'dn',FLAT:'neu'}[ai.signal]||'neu';
+    document.getElementById('acrd').className='a-card '+sc;
+    document.getElementById('aico').textContent=ai.icon||(q.changePct>0?'📈':q.changePct<0?'📉':'📊');
+    const at=document.getElementById('attl');
+    at.textContent=ai.title||'整體分析';
+    at.className='a-ttl '+sc;
+    document.getElementById('abdy').innerHTML=(ai.summary||'').split(/[。\n]/).filter(Boolean).map(p=>`<p>${p.trim()}。</p>`).join('');
+    if(ai.tip){
+      const tp=document.getElementById('tip');
+      tp.innerHTML=`<strong>⚠️ 下單前提醒：</strong>${ai.tip}`;
+      tp.style.display='block';
     }
-  } catch(_) {
-    // Fallback
-    const ac = document.getElementById('analysis-card');
-    ac.className = 'analysis-card ' + cls;
-    document.getElementById('sig-icon').textContent = up?'📈':dn?'📉':'📊';
-    const st = document.getElementById('sig-title');
-    st.textContent = up?'今天走勢偏強':dn?'今天走勢偏弱':'今天小幅震盪';
-    st.className = 'sig-title ' + cls;
-    document.getElementById('sig-body').innerHTML =
-      `<p>${q.name}今天${up?'上漲':'下跌'} ${Math.abs(q.changePct)}%。</p>
-       <p>${ind.maText}</p>
-       <p>${ind.volText}</p>`;
+  }catch(_){
+    const cls2=upDn(q.changePct);
+    document.getElementById('acrd').className='a-card '+cls2;
+    document.getElementById('aico').textContent=q.changePct>0?'📈':q.changePct<0?'📉':'📊';
+    const at=document.getElementById('attl');
+    at.textContent=q.changePct>0?'今天走勢偏強':q.changePct<0?'今天走勢偏弱':'今天小幅震盪';
+    at.className='a-ttl '+cls2;
+    document.getElementById('abdy').innerHTML=
+      `<p>${q.name}今天${q.changePct>0?'上漲':'下跌'} ${Math.abs(q.changePct)}%。</p>
+       <p>${ind.maiT}</p><p>${ind.viT}</p>`;
   }
 }
 
 // ── Load watchlist ────────────────────────────────────────────
-(async () => {
-  try {
-    const res  = await fetch(`/api/multi?stocks=${WATCH.map(w=>w.c).join(',')}`);
-    const data = await res.json();
-    if (!data.ok) return;
-    data.data.forEach(q => {
-      const el = document.getElementById('wc-' + q.code);
-      if (!el) return;
-      const up = q.changePct > 0, dn = q.changePct < 0;
-      const cls = up ? 'up' : dn ? 'dn' : 'neu';
-      el.querySelector('.wc-skel').outerHTML =
-        `<div class="wc-price ${cls}">${q.price.toLocaleString()}</div>
-         <div class="wc-chg ${cls}">${up?'▲':'▼'} ${up?'+':''}${q.changePct}%</div>`;
+(async()=>{
+  try{
+    const res=await fetch(`/api/multi?stocks=${WATCH.map(w=>w.c).join(',')}`);
+    const data=await res.json();
+    if(!data.ok)return;
+    data.data.forEach(q=>{
+      const el=document.getElementById('wc-'+q.code);
+      if(!el)return;
+      const cls=upDn(q.changePct);
+      el.querySelector('.w-skel').outerHTML=
+        `<div class="w-price ${cls}">${q.price.toLocaleString()}</div>
+         <div class="w-chg ${cls}">${arrow(q.changePct)} ${q.changePct>0?'+':''}${q.changePct}%</div>`;
     });
-  } catch(_) {}
+  }catch(_){}
 })();
 
-document.getElementById('inp').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 </script>
 </body>
 </html>
