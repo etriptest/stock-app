@@ -50,6 +50,32 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 /* Wrap */
 .W { width: 100%; max-width: 640px; margin: 0 auto; padding: 0 12px; }
 
+/* ── 桌機雙欄佈局 ── */
+@media(min-width: 900px){
+  body { font-size: 17px; }
+  .hdr { padding: 16px 32px; }
+  .hdr-title { font-size: 24px; }
+  .W { max-width: 1240px; padding: 0 28px; }
+  .desktop-grid { display: grid; grid-template-columns: 1fr 400px; gap: 22px; align-items: start; margin-top: 20px; }
+  .desktop-right { position: sticky; top: 72px; display: flex; flex-direction: column; gap: 0; }
+  .desktop-left  { min-width: 0; }
+  .s-inp  { font-size: 20px; padding: 13px 16px; }
+  .s-btn  { width: 88px; font-size: 18px; }
+  .s-card { padding: 20px; }
+  .p-num  { font-size: 56px; }
+  .p-name { font-size: 26px; }
+  .a-ttl  { font-size: 22px; }
+  .a-bdy  { font-size: 16px; }
+  .l-txt  { font-size: 15px; }
+  .w-price{ font-size: 24px; }
+  .w-name { font-size: 15px; }
+  .result { margin-top: 16px; }
+  #kline-canvas { height: 240px !important; }
+  /* 桌機右欄的 section 不加上邊距 */
+  .desktop-right .w-hdr:first-child { margin-top: 0; }
+  .desktop-right .sec-div { margin: 14px 0; }
+}
+
 /* Search card */
 .s-card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 14px; margin-top: 14px; box-shadow: 0 1px 8px rgba(0,0,0,.06); }
 .s-label { font-size: 13px; color: var(--dim); margin-bottom: 9px; }
@@ -169,6 +195,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 .w-skel  { height: 40px; background: linear-gradient(90deg, var(--card2) 25%, var(--bd) 50%, var(--card2) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; border-radius: 7px; margin-top: 6px; }
 @keyframes shim { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
+/* Fav & Alert buttons */
+.add-fav-btn { padding:5px 13px;border:1px solid var(--navy);border-radius:20px;background:transparent;color:var(--navy);font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;transition:.15s; }
+.add-fav-btn:active { background:var(--navy);color:#fff; }
+.fav-card { background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:13px 12px;cursor:pointer;transition:border-color .15s;position:relative; }
+.fav-card:active { border-color:var(--navy); }
+.fav-del { position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--card2);border:1px solid var(--bd);color:var(--dim);font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1; }
+.fav-del:active { background:#fef0f0;border-color:#f5c0c0;color:#d0021b; }
+.alert-row { background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.alert-info { flex:1; }
+.alert-code { font-size:14px;font-weight:700;color:var(--text); }
+.alert-desc { font-size:12px;color:var(--dim);margin-top:2px; }
+.alert-status { font-size:12px;padding:3px 9px;border-radius:20px;font-weight:600;white-space:nowrap; }
+.alert-status.wait { background:#f0f4ff;color:#1a6b9a; }
+.alert-status.hit  { background:#fff0f0;color:#d0021b; }
+.alert-del { padding:5px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card2);color:var(--dim);font-size:12px;cursor:pointer;white-space:nowrap; }
+
 /* Section divider */
 .sec-div { height: 1px; background: var(--bd); margin: 18px 0; }
 </style>
@@ -190,89 +232,156 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 
 <div class="W">
 
-  <!-- Search -->
-  <div class="s-card">
-    <div class="s-label">請輸入股票代號或公司名稱</div>
-    <div class="s-row">
-      <div class="s-wrap">
-        <input class="s-inp" id="inp" type="text" inputmode="text"
-               placeholder="2330、台積電、NVDA、Apple…" autocomplete="off" />
-        <div class="dd" id="dd"></div>
+  <!-- 桌機：左右兩欄；手機：單欄（desktop-grid 只在桌機生效） -->
+  <div class="desktop-grid">
+
+    <!-- 左欄：搜尋 + 查詢結果 -->
+    <div class="desktop-left">
+
+      <!-- Search -->
+      <div class="s-card">
+        <div class="s-label">請輸入股票代號或公司名稱</div>
+        <div class="s-row">
+          <div class="s-wrap">
+            <input class="s-inp" id="inp" type="text" inputmode="text"
+                   placeholder="2330、台積電、NVDA、Apple…" autocomplete="off" />
+            <div class="dd" id="dd"></div>
+          </div>
+          <button class="s-btn" id="sbtn" onclick="doSearch()">查詢</button>
+        </div>
+        <div class="q-label">快速查詢</div>
+        <div class="q-row" id="qrow"></div>
       </div>
-      <button class="s-btn" id="sbtn" onclick="doSearch()">查詢</button>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>查詢中，請稍候…
+      </div>
+
+      <!-- Error -->
+      <div class="err-box" id="errbox"></div>
+
+      <!-- Result -->
+      <div class="result" id="result">
+        <div class="p-card" id="pcrd"></div>
+        <div class="sec-t">📊 K 線走勢圖</div>
+        <div style="background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;" id="kline-legend">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#d0021b;display:inline-block"></span>MA5</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#f59e0b;display:inline-block"></span>MA20</span>
+            <span id="kline-color-hint" style="color:var(--dim)">🇹🇼 紅漲綠跌</span>
+          </div>
+          <canvas id="kline-canvas" style="width:100%;height:200px;display:block;border-radius:8px;"></canvas>
+          <div id="kline-msg" style="text-align:center;padding:16px;font-size:13px;color:var(--dim);display:none">資料載入中…</div>
+        </div>
+        <div class="sec-t">📐 K 線型態辨識</div>
+        <div id="pattern-box"></div>
+        <div class="sec-t">技術訊號說明</div>
+        <div class="lights" id="lights"></div>
+        <div class="a-card neu" id="acrd">
+          <div class="a-hdr">
+            <div class="a-ico" id="aico">🔍</div>
+            <div class="a-ttl neu" id="attl">整體解讀中…</div>
+          </div>
+          <div class="a-bdy" id="abdy">
+            <div class="w-skel" style="margin-bottom:8px"></div>
+            <div class="w-skel" style="width:80%;margin-bottom:8px"></div>
+            <div class="w-skel" style="width:60%"></div>
+          </div>
+        </div>
+        <div class="tip" id="tip"></div>
+        <div class="disc">資料來源：台灣證交所 / Yahoo Finance，盤中約延遲 5 分鐘。以上說明僅供參考，投資請自行判斷，風險自負。</div>
+      </div>
+
+    </div><!-- /desktop-left -->
+
+    <!-- 右欄：自選股、熱門、提醒 -->
+    <div class="desktop-right">
+
+      <!-- 自選股清單 -->
+      <div class="w-hdr" style="margin-top:14px;">
+        <div class="w-title">⭐ 我的自選股</div>
+        <button class="add-fav-btn" onclick="openAddFav()">＋ 新增</button>
+      </div>
+      <div id="fav-empty" style="background:var(--card);border:1px dashed var(--bd);border-radius:13px;padding:16px;text-align:center;font-size:14px;color:var(--dim);">
+        還沒有自選股，點「＋ 新增」加入
+      </div>
+      <div class="w-grid" id="fav-grid" style="display:none"></div>
+
+      <!-- 價格提醒 -->
+      <div class="sec-div"></div>
+      <div class="w-hdr">
+        <div class="w-title">🔔 價格提醒</div>
+        <button class="add-fav-btn" onclick="openAddAlert()">＋ 新增</button>
+      </div>
+      <div id="alert-empty" style="background:var(--card);border:1px dashed var(--bd);border-radius:13px;padding:16px;text-align:center;font-size:14px;color:var(--dim);">
+        還沒有價格提醒，點「＋ 新增」設定
+      </div>
+      <div id="alert-list" style="display:none;flex-direction:column;gap:8px;"></div>
+
+      <!-- TW Watchlist -->
+      <div class="sec-div"></div>
+      <div class="w-hdr">
+        <div class="w-title">🇹🇼 台股熱門</div>
+        <div class="w-sub">點擊可查詢</div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#d0021b"></div>紅色＝上漲</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#007a3d"></div>綠色＝下跌</div>
+      </div>
+      <div class="w-grid" id="wgrid-tw"></div>
+
+      <!-- US Watchlist -->
+      <div class="sec-div"></div>
+      <div class="w-hdr">
+        <div class="w-title">🇺🇸 美股熱門</div>
+        <div class="w-sub">點擊可查詢</div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#007a3d"></div>綠色＝上漲</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#d0021b"></div>紅色＝下跌</div>
+      </div>
+      <div class="w-grid" id="wgrid-us"></div>
+
+    </div><!-- /desktop-right -->
+
+  </div><!-- /desktop-grid -->
+
+  <!-- 價格到達通知 -->
+  <div id="price-alert-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;padding:14px 16px;font-size:15px;font-weight:700;text-align:center;line-height:1.5;"></div>
+
+  <!-- 新增自選股 Modal -->
+  <div id="modal-fav" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--card);border-radius:16px;padding:22px;width:100%;max-width:380px;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:14px;">⭐ 新增自選股</div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:8px;">股票代號</div>
+      <input id="fav-input" type="text" placeholder="例如：2330 或 NVDA" style="width:100%;font-size:16px;padding:10px 12px;border:2px solid var(--bd);border-radius:10px;background:var(--card2);color:var(--text);outline:none;margin-bottom:16px;font-family:inherit;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeModal('modal-fav')" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card2);color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;">取消</button>
+        <button onclick="addFav()" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--navy);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;">新增</button>
+      </div>
     </div>
-    <div class="q-label">快速查詢</div>
-    <div class="q-row" id="qrow"></div>
   </div>
 
-  <!-- Loading -->
-  <div class="loading" id="loading">
-    <div class="spinner"></div>查詢中，請稍候…
-  </div>
-
-  <!-- Error -->
-  <div class="err-box" id="errbox"></div>
-
-  <!-- Result -->
-  <div class="result" id="result">
-    <div class="p-card" id="pcrd"></div>
-
-    <!-- K線圖 -->
-    <div class="sec-t">📊 K 線走勢圖</div>
-    <div style="background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px;">
-      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;" id="kline-legend">
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#d0021b;display:inline-block"></span>MA5</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#f59e0b;display:inline-block"></span>MA20</span>
-        <span id="kline-color-hint" style="color:var(--dim)">🇹🇼 紅漲綠跌</span>
+  <!-- 新增價格提醒 Modal -->
+  <div id="modal-alert" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--card);border-radius:16px;padding:22px;width:100%;max-width:380px;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:14px;">🔔 新增價格提醒</div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:6px;">股票代號</div>
+      <input id="alert-code-input" type="text" placeholder="例如：2330 或 NVDA" style="width:100%;font-size:16px;padding:10px 12px;border:2px solid var(--bd);border-radius:10px;background:var(--card2);color:var(--text);outline:none;margin-bottom:12px;font-family:inherit;">
+      <div style="font-size:13px;color:var(--dim);margin-bottom:6px;">提醒類型</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button id="alert-type-above" onclick="setAlertType('above')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--navy);background:var(--navy);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;">📈 漲到</button>
+        <button id="alert-type-below" onclick="setAlertType('below')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--bd);background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;">📉 跌到</button>
       </div>
-      <canvas id="kline-canvas" style="width:100%;height:200px;display:block;border-radius:8px;"></canvas>
-      <div id="kline-msg" style="text-align:center;padding:16px;font-size:13px;color:var(--dim);display:none">資料載入中…</div>
-    </div>
-
-    <!-- Pattern Recognition -->
-    <div class="sec-t">📐 K 線型態辨識</div>
-    <div id="pattern-box"></div>
-
-    <div class="sec-t">技術訊號說明</div>
-    <div class="lights" id="lights"></div>
-    <div class="a-card neu" id="acrd">
-      <div class="a-hdr">
-        <div class="a-ico" id="aico">🔍</div>
-        <div class="a-ttl neu" id="attl">整體解讀中…</div>
-      </div>
-      <div class="a-bdy" id="abdy">
-        <div class="w-skel" style="margin-bottom:8px"></div>
-        <div class="w-skel" style="width:80%;margin-bottom:8px"></div>
-        <div class="w-skel" style="width:60%"></div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:6px;">目標價格</div>
+      <input id="alert-price-input" type="number" placeholder="例如：1000" style="width:100%;font-size:16px;padding:10px 12px;border:2px solid var(--bd);border-radius:10px;background:var(--card2);color:var(--text);outline:none;margin-bottom:16px;font-family:inherit;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeModal('modal-alert')" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card2);color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;">取消</button>
+        <button onclick="addAlert()" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--navy);color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;">新增</button>
       </div>
     </div>
-    <div class="tip" id="tip"></div>
-    <div class="disc">資料來源：台灣證交所 / Finnhub，盤中約延遲 5 分鐘。以上說明僅供參考，投資請自行判斷，風險自負。</div>
   </div>
-
-  <!-- TW Watchlist -->
-  <div class="w-hdr">
-    <div class="w-title">🇹🇼 台股熱門</div>
-    <div class="w-sub">點擊可查詢</div>
-  </div>
-  <div class="legend">
-    <div class="leg-item"><div class="leg-dot" style="background:#d0021b"></div>紅色＝上漲</div>
-    <div class="leg-item"><div class="leg-dot" style="background:#007a3d"></div>綠色＝下跌</div>
-  </div>
-  <div class="w-grid" id="wgrid-tw"></div>
-
-  <div class="sec-div"></div>
-
-  <!-- US Watchlist -->
-  <div class="w-hdr">
-    <div class="w-title">🇺🇸 美股熱門</div>
-    <div class="w-sub">點擊可查詢</div>
-  </div>
-  <div class="legend">
-    <div class="leg-item"><div class="leg-dot" style="background:#007a3d"></div>綠色＝上漲</div>
-    <div class="leg-item"><div class="leg-dot" style="background:#d0021b"></div>紅色＝下跌</div>
-  </div>
-  <div class="w-grid" id="wgrid-us"></div>
 
 </div>
 
@@ -954,6 +1063,229 @@ async function fetchAI(q,ind){
     await new Promise(r=>setTimeout(r,400));
   }
 })();
+
+// ── 自選股清單 ────────────────────────────────────────────────
+function getFavs(){ try{ return JSON.parse(localStorage.getItem('favs')||'[]'); }catch(_){ return []; } }
+function saveFavs(f){ localStorage.setItem('favs', JSON.stringify(f)); }
+
+function openAddFav(){
+  document.getElementById('fav-input').value='';
+  document.getElementById('modal-fav').style.display='flex';
+  setTimeout(()=>document.getElementById('fav-input').focus(), 100);
+}
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+
+function addFav(){
+  const code = document.getElementById('fav-input').value.trim().toUpperCase();
+  if(!code){ alert('請輸入股票代號'); return; }
+  const favs = getFavs();
+  if(favs.find(f=>f.code===code)){ alert(`${code} 已在自選股清單中`); return; }
+  const tw = isTW(code);
+  favs.push({ code, market: tw?'TW':'US', addedAt: Date.now() });
+  saveFavs(favs);
+  closeModal('modal-fav');
+  renderFavs();
+  loadFavPrices();
+}
+
+function removeFav(code){
+  const favs = getFavs().filter(f=>f.code!==code);
+  saveFavs(favs);
+  renderFavs();
+}
+
+function renderFavs(){
+  const favs = getFavs();
+  const grid  = document.getElementById('fav-grid');
+  const empty = document.getElementById('fav-empty');
+  if(!favs.length){
+    grid.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  empty.style.display='none';
+  grid.style.display='grid';
+  grid.innerHTML = favs.map(f=>`
+    <div class="fav-card" id="fav-${f.code}" onclick="go('${f.code}')">
+      <div class="fav-del" onclick="event.stopPropagation();removeFav('${f.code}')">✕</div>
+      <div class="w-name">${f.code}</div>
+      <div class="w-code">${f.market==='US'?'🇺🇸 美股':'🇹🇼 台股'}</div>
+      <div class="w-skel" style="height:40px;margin-top:6px;"></div>
+    </div>`).join('');
+}
+
+async function loadFavPrices(){
+  const favs = getFavs();
+  if(!favs.length) return;
+
+  // 台股批次
+  const twCodes = favs.filter(f=>f.market==='TW').map(f=>f.code);
+  if(twCodes.length){
+    try{
+      const res  = await fetch(`/api/multi?stocks=${twCodes.join(',')}`);
+      const data = await res.json();
+      if(data.ok) data.data.forEach(q=>{
+        updateFavCard(q.code, q.price, q.changePct, true);
+      });
+    }catch(_){}
+  }
+
+  // 美股逐一
+  const usCodes = favs.filter(f=>f.market==='US').map(f=>f.code);
+  for(const code of usCodes){
+    try{
+      const res = await fetch(`/api/quote-us/${code}`);
+      const q   = await res.json();
+      if(q.ok) updateFavCard(code, q.price, q.changePct, false);
+    }catch(_){}
+    await new Promise(r=>setTimeout(r,300));
+  }
+}
+
+function updateFavCard(code, price, pct, tw){
+  const el = document.getElementById('fav-'+code);
+  if(!el) return;
+  const sk = el.querySelector('.w-skel');
+  if(!sk) return;
+  const c = tw ? twColor(pct) : usColor(pct);
+  sk.outerHTML=`
+    <div class="w-price" style="color:${c};font-size:22px;font-weight:700;line-height:1.1;">${price.toLocaleString('en',{maximumFractionDigits:2})}</div>
+    <div class="w-chg" style="color:${c};font-size:12px;font-weight:500;margin-top:2px;">${pct>0?'▲':'▼'} ${pct>0?'+':''}${pct}%</div>`;
+}
+
+// ── 價格提醒 ───────────────────────────────────────────────────
+let alertType = 'above';
+
+function getAlerts(){ try{ return JSON.parse(localStorage.getItem('price_alerts')||'[]'); }catch(_){ return []; } }
+function saveAlerts(a){ localStorage.setItem('price_alerts', JSON.stringify(a)); }
+
+function setAlertType(type){
+  alertType = type;
+  document.getElementById('alert-type-above').style.cssText = type==='above'
+    ? 'flex:1;padding:9px;border-radius:9px;border:2px solid var(--navy);background:var(--navy);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;'
+    : 'flex:1;padding:9px;border-radius:9px;border:2px solid var(--bd);background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;';
+  document.getElementById('alert-type-below').style.cssText = type==='below'
+    ? 'flex:1;padding:9px;border-radius:9px;border:2px solid var(--navy);background:var(--navy);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;'
+    : 'flex:1;padding:9px;border-radius:9px;border:2px solid var(--bd);background:var(--card2);color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;';
+}
+
+function openAddAlert(){
+  document.getElementById('alert-code-input').value='';
+  document.getElementById('alert-price-input').value='';
+  setAlertType('above');
+  document.getElementById('modal-alert').style.display='flex';
+  setTimeout(()=>document.getElementById('alert-code-input').focus(),100);
+}
+
+function addAlert(){
+  const code  = document.getElementById('alert-code-input').value.trim().toUpperCase();
+  const price = parseFloat(document.getElementById('alert-price-input').value);
+  if(!code){ alert('請輸入股票代號'); return; }
+  if(!price || price<=0){ alert('請輸入正確的目標價格'); return; }
+  const tw = isTW(code);
+  const alerts = getAlerts();
+  alerts.push({
+    id: Date.now(),
+    code, price, type: alertType,
+    market: tw?'TW':'US',
+    hit: false,
+    addedAt: Date.now()
+  });
+  saveAlerts(alerts);
+  closeModal('modal-alert');
+  renderAlerts();
+}
+
+function removeAlert(id){
+  const alerts = getAlerts().filter(a=>a.id!==id);
+  saveAlerts(alerts);
+  renderAlerts();
+}
+
+function renderAlerts(){
+  const alerts = getAlerts();
+  const list  = document.getElementById('alert-list');
+  const empty = document.getElementById('alert-empty');
+  if(!alerts.length){
+    list.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  empty.style.display='none';
+  list.style.display='flex';
+  list.innerHTML = alerts.map(a=>`
+    <div class="alert-row">
+      <div class="alert-info">
+        <div class="alert-code">${a.code} <span style="font-size:12px;color:var(--dim);font-weight:400;">${a.market==='US'?'🇺🇸':'🇹🇼'}</span></div>
+        <div class="alert-desc">${a.type==='above'?'📈 漲到':'📉 跌到'} <strong>${a.price.toLocaleString()}</strong> 時提醒</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="alert-status ${a.hit?'hit':'wait'}">${a.hit?'✓ 已到價':'等待中'}</div>
+        <button class="alert-del" onclick="removeAlert(${a.id})">刪除</button>
+      </div>
+    </div>`).join('');
+}
+
+// 檢查價格提醒
+async function checkAlerts(){
+  const alerts = getAlerts().filter(a=>!a.hit);
+  if(!alerts.length) return;
+
+  const twCodes = [...new Set(alerts.filter(a=>a.market==='TW').map(a=>a.code))];
+  const usCodes = [...new Set(alerts.filter(a=>a.market==='US').map(a=>a.code))];
+  const prices  = {};
+
+  if(twCodes.length){
+    try{
+      const res  = await fetch(`/api/multi?stocks=${twCodes.join(',')}`);
+      const data = await res.json();
+      if(data.ok) data.data.forEach(q=>{ prices[q.code]=q.price; });
+    }catch(_){}
+  }
+  for(const code of usCodes){
+    try{
+      const res = await fetch(`/api/quote-us/${code}`);
+      const q   = await res.json();
+      if(q.ok) prices[code]=q.price;
+    }catch(_){}
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  const allAlerts = getAlerts();
+  const triggered = [];
+  allAlerts.forEach(a=>{
+    if(a.hit) return;
+    const cur = prices[a.code];
+    if(!cur) return;
+    if(a.type==='above' && cur>=a.price){ a.hit=true; triggered.push(a); }
+    if(a.type==='below' && cur<=a.price){ a.hit=true; triggered.push(a); }
+  });
+
+  if(triggered.length){
+    saveAlerts(allAlerts);
+    renderAlerts();
+    showAlertBanner(triggered, prices);
+  }
+}
+
+function showAlertBanner(triggered, prices){
+  const banner = document.getElementById('price-alert-banner');
+  const msgs = triggered.map(a=>{
+    const cur = prices[a.code];
+    const isUp = a.type==='above';
+    return `${a.code} ${isUp?'📈 已漲到':'📉 已跌到'} ${cur?.toLocaleString()}（目標 ${a.price.toLocaleString()}）`;
+  });
+  banner.style.cssText=`display:block;position:fixed;top:0;left:0;right:0;z-index:999;padding:14px 16px;font-size:15px;font-weight:700;text-align:center;line-height:1.7;background:${triggered[0].type==='above'?'#d0021b':'#007a3d'};color:#fff;`;
+  banner.innerHTML = msgs.join('<br>') + '<br><span style="font-size:12px;font-weight:400;opacity:.85">點此關閉</span>';
+  banner.onclick = ()=>{ banner.style.display='none'; };
+}
+
+// ── 初始化 ────────────────────────────────────────────────────
+renderFavs();
+renderAlerts();
+loadFavPrices();
+// 頁面載入後自動檢查價格提醒
+setTimeout(checkAlerts, 3000);
 </script>
 </body>
 </html>
