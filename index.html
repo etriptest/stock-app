@@ -7,9 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* 台灣股市：紅漲綠跌 */
-    --up:    #d0021b;   /* 上漲 → 紅 */
-    --dn:    #007a3d;   /* 下跌 → 綠 */
+    /* 台灣股市：紅漲綠跌（預設） */
+    --up:    #d0021b;
+    --dn:    #007a3d;
     --up-bg: #fff0f0;
     --dn-bg: #f0faf4;
     --neu-bg:#f7f6f2;
@@ -22,6 +22,13 @@
     --dim:   #6b6460;
     --navy:  #1e3a5f;
     --navy2: #2a4f7a;
+  }
+  /* 美股模式：綠漲紅跌 */
+  body.us-mode {
+    --up:    #007a3d;
+    --dn:    #d0021b;
+    --up-bg: #f0faf4;
+    --dn-bg: #fff0f0;
   }
   *  { box-sizing: border-box; margin: 0; padding: 0; }
   html { overflow-x: hidden; }
@@ -174,7 +181,10 @@
       <div class="hdr-title">📈 股票查詢</div>
       <div class="hdr-sub">輸入代號，簡單看懂今天的股票狀況</div>
     </div>
-    <div class="hdr-time" id="clk">--:--</div>
+    <div style="text-align:right">
+      <div class="hdr-time" id="clk">--:--</div>
+      <div id="market-badge" style="font-size:11px;color:#8eabc8;margin-top:3px;"></div>
+    </div>
   </div>
 </div>
 
@@ -240,8 +250,11 @@
     <div class="watch-hdr-sub">點擊可查詢</div>
   </div>
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:var(--up)"></div>紅色＝上漲</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--dn)"></div>綠色＝下跌</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d0021b"></div>🇹🇼 台股紅漲</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#007a3d"></div>🇹🇼 台股綠跌</div>
+    <div style="width:1px;background:#e2ddd5;margin:0 4px"></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#007a3d"></div>🇺🇸 美股綠漲</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d0021b"></div>🇺🇸 美股紅跌</div>
   </div>
   <div class="w-grid" id="wgrid"></div>
 
@@ -250,13 +263,13 @@
 <script>
 // ── Data ─────────────────────────────────────────────────────
 const WATCH = [
-  {c:'2330',n:'台積電'},{c:'2317',n:'鴻海'},
-  {c:'2454',n:'聯發科'},{c:'0050',n:'元大台灣50'},
-  {c:'2382',n:'廣達'}, {c:'2412',n:'中華電'},
+  {c:'2330',n:'台積電',m:'TW'},{c:'2317',n:'鴻海',m:'TW'},
+  {c:'2454',n:'聯發科',m:'TW'},{c:'0050',n:'元大台灣50',m:'TW'},
+  {c:'NVDA',n:'NVIDIA',m:'US'},{c:'AAPL',n:'Apple',m:'US'},
 ];
 const QUICK = [
   {c:'2330',n:'台積電'},{c:'2317',n:'鴻海'},{c:'2454',n:'聯發科'},
-  {c:'0050',n:'台灣50'},{c:'0056',n:'高股息'},{c:'2308',n:'台達電'},
+  {c:'0050',n:'台灣50'},{c:'NVDA',n:'NVDA'},{c:'AAPL',n:'AAPL'},
 ];
 
 // ── Clock ─────────────────────────────────────────────────────
@@ -274,7 +287,8 @@ WATCH.forEach(w=>{
   const d=document.createElement('div');
   d.className='w-card'; d.id='wc-'+w.c;
   d.onclick=()=>go(w.c);
-  d.innerHTML=`<div class="w-name">${w.n}</div><div class="w-code">${w.c}</div><div class="w-skel"></div>`;
+  const badge=w.m==='US'?`<span style="font-size:10px;background:#e8f0f8;color:#1a6b9a;padding:1px 6px;border-radius:10px;margin-left:4px;">美股</span>`:`<span style="font-size:10px;background:#f0ede5;color:#6b6460;padding:1px 6px;border-radius:10px;margin-left:4px;">台股</span>`;
+  d.innerHTML=`<div class="w-name">${w.n}${badge}</div><div class="w-code">${w.c}</div><div class="w-skel"></div>`;
   wg.appendChild(d);
 });
 
@@ -346,42 +360,73 @@ function upDn(pct){ return pct>0?'up':pct<0?'dn':'neu'; }
 function arrow(pct){ return pct>0?'▲':pct<0?'▼':'－'; }
 function dotC(dot){ return dot==='red'?'var(--up)':dot==='green'?'var(--dn)':'#c8840a'; }
 
+// ── Market detection ──────────────────────────────────────────
+function isTW(code){ return /^\d{4,6}$/.test(code); }
+function setMarket(us){
+  const b = document.getElementById('market-badge');
+  if(us){
+    document.body.classList.add('us-mode');
+    b.textContent = '🇺🇸 美股｜綠漲紅跌';
+  } else {
+    document.body.classList.remove('us-mode');
+    b.textContent = '🇹🇼 台股｜紅漲綠跌';
+  }
+}
+
 // ── Main search ───────────────────────────────────────────────
 async function doSearch(){
-  const sn=document.getElementById('inp').value.replace(/\s/g,'');
+  const sn=document.getElementById('inp').value.replace(/\s/g,'').toUpperCase();
   if(!sn)return;
+  document.getElementById('inp').value=sn;
   document.getElementById('loading').style.display='block';
   document.getElementById('result').style.display='none';
   document.getElementById('errbox').style.display='none';
   document.getElementById('sbtn').disabled=true;
 
+  const tw = isTW(sn);
+  setMarket(!tw);
+
   try{
-    const [qr,hr]=await Promise.all([fetch(`/api/quote/${sn}`),fetch(`/api/history/${sn}`)]);
-    const q=await qr.json();
-    if(!q.ok)throw new Error(q.error||'查詢失敗，請確認代號是否正確');
-    const h=await hr.json();
-    const rows=h.data||[];
-    const C=rows.map(r=>r.close),H=rows.map(r=>r.high),L=rows.map(r=>r.low),V=rows.map(r=>r.volume);
+    let q, C=[], H=[], L=[], V=[];
+
+    if(tw){
+      // ── 台股 ──
+      const [qr,hr]=await Promise.all([fetch(`/api/quote/${sn}`),fetch(`/api/history/${sn}`)]);
+      q=await qr.json();
+      if(!q.ok)throw new Error(q.error||'查詢失敗，請確認代號是否正確');
+      const h=await hr.json();
+      const rows=h.data||[];
+      C=rows.map(r=>r.close);H=rows.map(r=>r.high);L=rows.map(r=>r.low);V=rows.map(r=>r.volume);
+    } else {
+      // ── 美股 ──
+      const qr=await fetch(`/api/quote-us/${sn}`);
+      q=await qr.json();
+      if(!q.ok)throw new Error(q.error||'查詢失敗，請確認美股代號是否正確');
+      // 美股暫無歷史資料，技術指標顯示為不足
+    }
+
     const aC=[...C,q.price],aH=[...H,q.high||q.price],aL=[...L,q.low||q.price];
-    const rv=rsi(aC);
-    const {k,d}=kd(aH,aL,aC);
-    const ma5=mav(aC,5),ma20=mav(aC,20);
-    const mc=aC.length>=26?+(ema(aC,12)-ema(aC,26)).toFixed(2):0;
+    const rv=C.length>14?rsi(aC):null;
+    const {k,d}=C.length>9?kd(aH,aL,aC):{k:50,d:50};
+    const ma5=C.length>=5?mav(aC,5):null,ma20=C.length>=20?mav(aC,20):null;
+    const mc=aC.length>=26?+(ema(aC,12)-ema(aC,26)).toFixed(2):null;
     const avgV=V.slice(-20).reduce((a,b)=>a+b,0)/Math.max(1,V.slice(-20).length);
     const vr=avgV>0?+(q.volume/avgV).toFixed(1):'–';
+
     const cls=upDn(q.changePct);
+    const cur=q.currency||'TWD';
 
     // ── Price card ────────────────────────────────────────────
     document.getElementById('pcrd').innerHTML=`
       <div class="p-meta">
         <div class="p-name">${q.name}</div>
         <div class="p-code">${q.code}</div>
-        <div class="p-ex">${q.exchange}</div>
+        <div class="p-ex" style="color:${tw?'var(--dim)':'#1a6b9a'}">${q.exchange} ${cur!=='TWD'?'· '+cur:''}</div>
       </div>
       <div class="p-main">
-        <div class="p-num ${cls}">${q.price.toLocaleString()}</div>
+        <div class="p-num ${cls}">${q.price.toLocaleString('en',{maximumFractionDigits:2})}</div>
         <div>
-          <div class="p-chg ${cls}">${arrow(q.changePct)} ${Math.abs(q.change).toFixed(2)} 元</div>
+          <div class="p-chg ${cls}">${arrow(q.changePct)} ${Math.abs(q.change).toFixed(2)}</div>
           <div class="p-chg ${cls}">${q.changePct>0?'+':''}${q.changePct}%</div>
         </div>
       </div>
@@ -392,7 +437,8 @@ async function doSearch(){
       </div>`;
 
     // ── Lights ────────────────────────────────────────────────
-    const ri=iRSI(rv),ki=iKD(k,d),mi=iMACD(mc),mai=iMA(q.price,ma5,ma20),vi=iVol(vr);
+    const ri=iRSI(rv),ki=iKD(k,d),mi=mc!==null?iMACD(mc):{dot:'yellow',txt:'資料不足，無法計算'},
+          mai=ma5&&ma20?iMA(q.price,ma5,ma20):{dot:'yellow',txt:'資料不足，無法計算'},vi=iVol(vr);
     document.getElementById('lights').innerHTML=[
       {lbl:'💹 漲跌動能',...ri},
       {lbl:'📉 買賣訊號',...ki},
@@ -401,7 +447,7 @@ async function doSearch(){
       {lbl:'🔊 成交量',  ...vi},
     ].map(l=>`
       <div class="light-row">
-        <div class="l-dot ${l.dot}" style="background:${dotC(l.dot)};box-shadow:0 0 7px ${dotC(l.dot)}66"></div>
+        <div class="l-dot" style="background:${dotC(l.dot)};box-shadow:0 0 7px ${dotC(l.dot)}66"></div>
         <div><div class="l-lbl">${l.lbl}</div><div class="l-txt">${l.txt}</div></div>
       </div>`).join('');
 
@@ -409,8 +455,7 @@ async function doSearch(){
     document.getElementById('result').style.display='block';
     document.getElementById('tip').style.display='none';
 
-    // ── AI ────────────────────────────────────────────────────
-    fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt});
+    fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
 
   }catch(e){
     document.getElementById('loading').style.display='none';
@@ -432,7 +477,7 @@ async function fetchAI(q,ind){
         system:`你是幫助台灣長輩看懂股票的助理。用非常口語、溫和的白話文說明，像鄰居朋友聊天。不用數字或術語。不給買賣建議。
 輸出純JSON：{"icon":"一個表情","title":"今天這支股票一句話（15字內）","summary":"2-3句話說明今天整體狀況","tip":"下單前一個溫和提醒（一句話）","signal":"UP或DOWN或FLAT"}`,
         messages:[{role:'user',content:
-          `${q.name}今天${q.changePct>0?'上漲':'下跌'}${Math.abs(q.changePct)}%。
+          `${q.name}(${q.code})今天${q.changePct>0?'上漲':'下跌'}${Math.abs(q.changePct)}%${ind.tw?'（台股）':'（美股）'}。
 漲跌動能：${ind.riT}
 買賣訊號：${ind.kiT}
 趨勢力道：${ind.miT}
@@ -473,19 +518,45 @@ async function fetchAI(q,ind){
 
 // ── Load watchlist ────────────────────────────────────────────
 (async()=>{
+  // 台股
+  const twStocks=WATCH.filter(w=>w.m==='TW').map(w=>w.c);
+  const usStocks=WATCH.filter(w=>w.m==='US').map(w=>w.c);
+
+  // 台股批次查詢
   try{
-    const res=await fetch(`/api/multi?stocks=${WATCH.map(w=>w.c).join(',')}`);
+    const res=await fetch(`/api/multi?stocks=${twStocks.join(',')}`);
     const data=await res.json();
-    if(!data.ok)return;
-    data.data.forEach(q=>{
-      const el=document.getElementById('wc-'+q.code);
-      if(!el)return;
-      const cls=upDn(q.changePct);
-      el.querySelector('.w-skel').outerHTML=
-        `<div class="w-price ${cls}">${q.price.toLocaleString()}</div>
-         <div class="w-chg ${cls}">${arrow(q.changePct)} ${q.changePct>0?'+':''}${q.changePct}%</div>`;
-    });
+    if(data.ok){
+      data.data.forEach(q=>{
+        const el=document.getElementById('wc-'+q.code);
+        if(!el)return;
+        const cls=upDn(q.changePct);
+        // 台股：紅漲綠跌（預設顏色）
+        el.querySelector('.w-skel').outerHTML=
+          `<div class="w-price ${cls}">${q.price.toLocaleString()}</div>
+           <div class="w-chg ${cls}">${arrow(q.changePct)} ${q.changePct>0?'+':''}${q.changePct}%</div>`;
+      });
+    }
   }catch(_){}
+
+  // 美股個別查詢
+  for(const code of usStocks){
+    try{
+      const res=await fetch(`/api/quote-us/${code}`);
+      const q=await res.json();
+      if(!q.ok)continue;
+      const el=document.getElementById('wc-'+code);
+      if(!el)continue;
+      const pct=q.changePct;
+      // 美股：綠漲紅跌（用 inline style 覆蓋，不受 body class 影響）
+      const upC='#007a3d',dnC='#d0021b';
+      const c=pct>0?upC:pct<0?dnC:'#1a1a1a';
+      const arr=pct>0?'▲':pct<0?'▼':'－';
+      el.querySelector('.w-skel').outerHTML=
+        `<div style="font-size:24px;font-weight:700;color:${c};line-height:1.1;">${q.price.toLocaleString('en',{maximumFractionDigits:2})}</div>
+         <div style="font-size:13px;font-weight:500;color:${c};margin-top:3px;">${arr} ${pct>0?'+':''}${pct}%</div>`;
+    }catch(_){}
+  }
 })();
 
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
