@@ -220,10 +220,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
     <!-- K線圖 -->
     <div class="sec-t">📊 K 線走勢圖</div>
     <div style="background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px;">
-      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;">
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;" id="kline-legend">
         <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#d0021b;display:inline-block"></span>MA5</span>
         <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#f59e0b;display:inline-block"></span>MA20</span>
-        <span style="display:flex;align-items:center;gap:4px;color:var(--dim)">🇹🇼 紅漲綠跌</span>
+        <span id="kline-color-hint" style="color:var(--dim)">🇹🇼 紅漲綠跌</span>
       </div>
       <canvas id="kline-canvas" style="width:100%;height:200px;display:block;border-radius:8px;"></canvas>
       <div id="kline-msg" style="text-align:center;padding:16px;font-size:13px;color:var(--dim);display:none">資料載入中…</div>
@@ -777,9 +777,21 @@ async function doSearch(){
         if(C.length >= 20) break;
       }
     } else {
-      const qr=await fetch(`/api/quote-us/${sn}`);
-      q=await qr.json();
-      if(!q.ok)throw new Error(q.error||'查詢失敗，請確認美股代號是否正確（如 NVDA、AAPL）');
+      // 美股：同時抓報價 + 歷史K線
+      const [qr, hr] = await Promise.all([
+        fetch(`/api/quote-us/${sn}`),
+        fetch(`/api/history-us/${sn}`)
+      ]);
+      q = await qr.json();
+      if(!q.ok) throw new Error(q.error||'查詢失敗，請確認美股代號是否正確（如 NVDA、AAPL）');
+
+      const hd = await hr.json();
+      const rows = hd.data || [];
+      C = rows.map(r=>r.close);
+      H = rows.map(r=>r.high);
+      L = rows.map(r=>r.low);
+      V = rows.map(r=>r.volume);
+      dates = rows.map(r=>r.date);
     }
 
     const aC=[...C,q.price],aH=[...H,q.high||q.price],aL=[...L,q.low||q.price];
@@ -829,6 +841,9 @@ async function doSearch(){
     document.getElementById('tip').style.display='none';
 
     // K線圖
+    const hint = document.getElementById('kline-color-hint');
+    if(hint) hint.textContent = tw ? '🇹🇼 紅漲綠跌' : '🇺🇸 綠漲紅跌';
+
     if(C.length >= 5){
       drawKLine(C, H, L, V, dates, q.price, tw);
     } else {
@@ -843,7 +858,7 @@ async function doSearch(){
       renderPatterns(patterns, tw);
     } else {
       document.getElementById('pattern-box').innerHTML=
-        `<div class="pat-none">需要至少 20 個交易日數據才能辨識型態（目前只有 ${C.length} 筆）。</div>`;
+        `<div class="pat-none">需要至少 20 個交易日數據才能辨識型態（目前取得 ${C.length} 筆）。</div>`;
     }
 
     fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
