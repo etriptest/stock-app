@@ -16,23 +16,42 @@
   --navy:  #1e3a5f;
   --navy2: #2a4f7a;
   --neu-bg:#f7f6f2;
-  /* 台股：紅漲綠跌 */
   --tw-up: #d0021b;
   --tw-dn: #007a3d;
-  /* 美股：綠漲紅跌 */
   --us-up: #007a3d;
   --us-dn: #d0021b;
-  /* 當前市場顏色（預設台股） */
   --up:    #d0021b;
   --dn:    #007a3d;
   --up-bg: #fff0f0;
   --dn-bg: #f0faf4;
+}
+@media(prefers-color-scheme: dark){
+  :root {
+    --bg:    #111210;
+    --card:  #1c1c1a;
+    --card2: #242422;
+    --bd:    #333330;
+    --text:  #e8e6e0;
+    --dim:   #888580;
+    --navy:  #1a3454;
+    --navy2: #234872;
+    --neu-bg:#1e1e1c;
+    --up-bg: #2a1015;
+    --dn-bg: #0e1f15;
+  }
 }
 body.us {
   --up:    #007a3d;
   --dn:    #d0021b;
   --up-bg: #f0faf4;
   --dn-bg: #fff0f0;
+}
+@media(prefers-color-scheme: dark){
+  body.us {
+    --up-bg: #0e1f15;
+    --dn-bg: #2a1015;
+  }
+}
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; overflow-x: hidden; }
@@ -863,13 +882,15 @@ function drawKLine(closes, highs, lows, vols, dates, currentPrice, tw){
   function py(p){ return PAD.top+cH*(1-(p-pMin)/pR); }
   const barGap=cW/n, barW=Math.max(1.5,barGap*0.6);
 
-  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,TH);
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  ctx.fillStyle = isDark ? '#1c1c1a' : '#fff';
+  ctx.fillRect(0,0,W,TH);
 
   for(let i=0;i<=4;i++){
     const y=PAD.top+cH*(i/4);
-    ctx.strokeStyle='#f0ede5'; ctx.lineWidth=0.5;
+    ctx.strokeStyle=isDark?'#333330':'#f0ede5'; ctx.lineWidth=0.5;
     ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
-    ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillStyle=isDark?'#666':'#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='right';
     ctx.fillText((pMax-pR*(i/4)).toFixed(1),W-2,y+3);
   }
 
@@ -893,7 +914,7 @@ function drawKLine(closes, highs, lows, vols, dates, currentPrice, tw){
   drawLine(calcMA(C,5),'#d0021b');
   drawLine(calcMA(C,20),'#f59e0b');
 
-  ctx.fillStyle='#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle=isDark?'#666':'#aaa'; ctx.font='9px sans-serif'; ctx.textAlign='center';
   const step=Math.ceil(n/6);
   D.forEach((d,i)=>{
     if(i%step!==0&&i!==n-1)return;

@@ -10,6 +10,12 @@
   --bg:#f4f2ed; --card:#fff; --card2:#faf9f6; --bd:#e2ddd5;
   --text:#1a1a1a; --dim:#6b6460; --navy:#1e3a5f;
 }
+@media(prefers-color-scheme: dark){
+  :root {
+    --bg:#111210; --card:#1c1c1a; --card2:#242422; --bd:#333330;
+    --text:#e8e6e0; --dim:#888580; --navy:#1a3454;
+  }
+}
 * { box-sizing:border-box; margin:0; padding:0; }
 body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; }
 
@@ -108,7 +114,7 @@ const CHAINS = {
     nodes: [
       // 上游
       { id:'asml',   x:40,  y:58,  w:120, label:'ASML',     sub:'微影設備 🇳🇱',      color:'teal',   code:'ASML',   role:'上游設備',   desc:'全球唯一 EUV 微影設備製造商，沒有 ASML 就沒有先進晶片。台積電、三星、Intel 都要靠它。' },
-      { id:'shin',   x:175, y:58,  w:120, label:'信越化學',  sub:'矽晶圓 🇯🇵',        color:'teal',   code:'4063.T', role:'上游材料',   desc:'全球最大矽晶圓供應商，台積電主要原料來源之一。' },
+      { id:'shin',   x:175, y:58,  w:120, label:'信越化學',  sub:'矽晶圓 🇯🇵',        color:'teal',   code:'SHECY',  role:'上游材料',   desc:'全球最大矽晶圓供應商，台積電主要原料來源之一。（美股 ADR）' },
       { id:'gobj',   x:310, y:58,  w:120, label:'環球晶',    sub:'矽晶圓 6488 🇹🇼',   color:'teal',   code:'6488',   role:'上游材料',   desc:'台灣最大矽晶圓廠，全球第三大，是台積電的重要供應商。' },
       { id:'amat',   x:445, y:58,  w:120, label:'AMAT',      sub:'沉積設備 🇺🇸',      color:'teal',   code:'AMAT',   role:'上游設備',   desc:'Applied Materials，全球最大半導體設備公司，提供薄膜沉積、蝕刻等設備。' },
       { id:'kla',    x:580, y:58,  w:120, label:'KLA',       sub:'量測設備 🇺🇸',      color:'teal',   code:'KLAC',   role:'上游設備',   desc:'全球量測與檢測設備龍頭，確保晶片製造品質，台積電重要供應商。' },
@@ -120,7 +126,7 @@ const CHAINS = {
       { id:'mtk',    x:660, y:238, w:90,  label:'聯發科',     sub:'IC設計 2454 🇹🇼',   color:'purple', code:'2454',   role:'IC設計',     desc:'全球最大手機 IC 設計公司，旗艦 Dimensity 晶片委託台積電代工。' },
       // 下游
       { id:'asmpt',  x:40,  y:418, w:120, label:'日月光',     sub:'封裝 3711 🇹🇼',     color:'amber',  code:'3711',   role:'封裝測試',   desc:'全球最大封裝測試廠，提供先進封裝（SiP、CoWoS）服務，是台積電封裝合作夥伴。' },
-      { id:'hynix',  x:175, y:418, w:130, label:'SK Hynix',   sub:'HBM記憶體 🇰🇷',    color:'blue',   code:'000660.KS', role:'記憶體',  desc:'全球 HBM（高頻寬記憶體）第一，NVIDIA H100 內的 HBM 幾乎全來自 SK Hynix。' },
+      { id:'hynix',  x:175, y:418, w:130, label:'SK Hynix',   sub:'HBM記憶體 🇰🇷',    color:'blue',   code:'HXSCL',     role:'記憶體',  desc:'全球 HBM（高頻寬記憶體）第一，NVIDIA H100 內的 HBM 幾乎全來自 SK Hynix。（美股 ADR）' },
       { id:'hon',    x:320, y:418, w:110, label:'鴻海',        sub:'代工組裝 2317 🇹🇼', color:'amber',  code:'2317',   role:'系統組裝',   desc:'全球最大電子代工廠，負責 iPhone、伺服器組裝，AI 伺服器需求強勁。' },
       { id:'quanta', x:445, y:418, w:110, label:'廣達',        sub:'AI伺服器 2382 🇹🇼', color:'amber',  code:'2382',   role:'系統組裝',   desc:'全球最大筆電代工廠，同時是最大 AI 伺服器廠，Google、Meta 的伺服器大多由廣達代工。' },
       { id:'sil',    x:570, y:418, w:110, label:'矽品',        sub:'封裝 2325 🇹🇼',     color:'amber',  code:'2325',   role:'封裝測試',   desc:'台灣第二大封裝廠，已與日月光合併（ASE集團），提供先進封裝服務。' },
@@ -181,20 +187,20 @@ const CHAINS = {
     nodes: [
       // 上游
       { id:'alb',   x:40,  y:58,  w:120, label:'Albemarle', sub:'鋰礦 🇺🇸',         color:'teal',   code:'ALB',    role:'原物料',     desc:'全球最大鋰礦公司，電池原料鋰的主要供應商，電動車需求直接影響股價。' },
-      { id:'ganf',  x:175, y:58,  w:120, label:'贛鋒鋰業',  sub:'鋰礦 🇨🇳',         color:'teal',   code:'002460', role:'原物料',     desc:'中國最大鋰礦公司，全球鋰資源開發龍頭。' },
+      { id:'ganf',  x:175, y:58,  w:120, label:'贛鋒鋰業',  sub:'鋰礦 🇨🇳',         color:'teal',   code:'GNENF',  role:'原物料',     desc:'中國最大鋰礦公司，全球鋰資源開發龍頭。（美股 OTC）' },
       { id:'mp',    x:310, y:58,  w:120, label:'MP Materials',sub:'稀土 🇺🇸',        color:'teal',   code:'MP',     role:'原物料',     desc:'美國唯一稀土礦山，永磁材料是電動馬達的關鍵材料。' },
       { id:'vale',  x:445, y:58,  w:120, label:'Vale',      sub:'鎳礦 🇧🇷',         color:'teal',   code:'VALE',   role:'原物料',     desc:'全球最大鎳礦公司，高鎳三元電池是目前主流，需求大。' },
       // 中游
-      { id:'catl',  x:40,  y:238, w:130, label:'寧德時代',   sub:'電池 🇨🇳',         color:'purple', code:'300750', role:'電池製造',   desc:'全球最大動力電池廠，市佔率超過 35%，特斯拉、BMW、Volkswagen 都是客戶。' },
-      { id:'lges',  x:185, y:238, w:120, label:'LG Energy',  sub:'電池 🇰🇷',         color:'purple', code:'373220.KS', role:'電池製造', desc:'全球第二大動力電池廠，特斯拉、GM、現代汽車的電池供應商。' },
-      { id:'pana',  x:320, y:238, w:120, label:'Panasonic', sub:'電池 🇯🇵',         color:'purple', code:'6752.T', role:'電池製造',   desc:'特斯拉 Model S/3 主要電池合作夥伴，在內華達 Gigafactory 合資生產。' },
-      { id:'byd',   x:455, y:238, w:110, label:'比亞迪',     sub:'電池+整車 🇨🇳',    color:'coral',  code:'002594', role:'垂直整合',   desc:'全球電動車銷量第一（與特斯拉競爭），自產電池、晶片、馬達，垂直整合度最高。' },
+      { id:'catl',  x:40,  y:238, w:130, label:'寧德時代',   sub:'電池 🇨🇳',         color:'purple', code:'CBDTF',  role:'電池製造',   desc:'全球最大動力電池廠，市佔率超過 35%，特斯拉、BMW、Volkswagen 都是客戶。（美股 OTC）' },
+      { id:'lges',  x:185, y:238, w:120, label:'LG Energy',  sub:'電池 🇰🇷',         color:'purple', code:'LGCLF',     role:'電池製造', desc:'全球第二大動力電池廠，特斯拉、GM、現代汽車的電池供應商。（美股 OTC）' },
+      { id:'pana',  x:320, y:238, w:120, label:'Panasonic', sub:'電池 🇯🇵',         color:'purple', code:'PCRFY',  role:'電池製造',   desc:'特斯拉 Model S/3 主要電池合作夥伴，在內華達 Gigafactory 合資生產。（美股 ADR）' },
+      { id:'byd',   x:455, y:238, w:110, label:'比亞迪',     sub:'電池+整車 🇨🇳',    color:'coral',  code:'BYDDF',  role:'垂直整合',   desc:'全球電動車銷量第一（與特斯拉競爭），自產電池、晶片、馬達，垂直整合度最高。（美股 ADR）' },
       { id:'on',    x:580, y:238, w:120, label:'onsemi',    sub:'功率半導體 🇺🇸',    color:'purple', code:'ON',     role:'零組件',     desc:'車用功率半導體龍頭，電動車逆變器的關鍵元件供應商。' },
       // 整車
       { id:'tsla2', x:40,  y:418, w:120, label:'Tesla',     sub:'電動車 🇺🇸',        color:'coral',  code:'TSLA',   role:'整車品牌',   desc:'全球最有品牌價值的電動車公司，自動駕駛 FSD 是最大差異化優勢，Gigafactory 遍布全球。' },
       { id:'gm',    x:175, y:418, w:110, label:'GM',        sub:'電動車 🇺🇸',        color:'coral',  code:'GM',     role:'整車品牌',   desc:'美國傳統車廠轉型電動車，Ultium 電池平台搭配 LG Energy 電池。' },
       { id:'vw',    x:300, y:418, w:110, label:'Volkswagen',sub:'電動車 🇩🇪',        color:'coral',  code:'VOW3.DE',role:'整車品牌',   desc:'歐洲最大車廠，ID.4 等車型在全球熱銷，電動化轉型積極。' },
-      { id:'hyun',  x:425, y:418, w:120, label:'現代起亞',  sub:'電動車 🇰🇷',        color:'coral',  code:'005380.KS',role:'整車品牌', desc:'IONIQ 6 獲年度最佳電動車，電動化轉型速度在傳統車廠中最快之一。' },
+      { id:'hyun',  x:425, y:418, w:120, label:'現代起亞',  sub:'電動車 🇰🇷',        color:'coral',  code:'HYMTF',     role:'整車品牌', desc:'IONIQ 6 獲年度最佳電動車，電動化轉型速度在傳統車廠中最快之一。（美股 ADR）' },
       { id:'li',    x:560, y:418, w:110, label:'理想汽車',  sub:'增程電動 🇨🇳',      color:'coral',  code:'LI',     role:'整車品牌',   desc:'中國增程式電動車龍頭，已在美股上市，聚焦家庭用戶市場。' },
       // 下游
       { id:'chpt',  x:40,  y:578, w:120, label:'ChargePoint',sub:'充電樁 🇺🇸',       color:'gray',   code:'CHPT',   role:'充電服務',   desc:'北美最大電動車充電網路運營商，充電樁數量超過 25 萬個。' },
@@ -303,7 +309,15 @@ const CHAINS = {
 };
 
 // ── 顏色 ──────────────────────────────────────────────────────
-const COLORS = {
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const COLORS = isDark ? {
+  teal:   { fill:'#0d2e22', stroke:'#1d6b4a', text:'#7dd4b0' },
+  purple: { fill:'#1a1730', stroke:'#6b63c8', text:'#b0aaf0' },
+  coral:  { fill:'#2a1208', stroke:'#b04020', text:'#e8907a' },
+  amber:  { fill:'#261a04', stroke:'#c07010', text:'#e8b060' },
+  gray:   { fill:'#1e1e1c', stroke:'#555550', text:'#b0aea8' },
+  blue:   { fill:'#0a1e32', stroke:'#2060a0', text:'#80b8e8' },
+} : {
   teal:   { fill:'#E1F5EE', stroke:'#5DCAA5', text:'#085041' },
   purple: { fill:'#EEEDFE', stroke:'#534AB7', text:'#26215C' },
   coral:  { fill:'#FAECE7', stroke:'#D85A30', text:'#4A1B0C' },
@@ -355,13 +369,14 @@ function renderChain(chainKey) {
   });
 
   // 連接線
+  const edgeColor = isDark ? '#444440' : '#C8C4BB';
   chain.edges.forEach(e => {
     const from = nodeMap[e.from], to = nodeMap[e.to];
     if (!from || !to) return;
     const { sx, sy, ex, ey } = edgePoints(from, to);
     const midY = (sy + ey) / 2;
     const d    = `M${sx} ${sy} C${sx} ${midY} ${ex} ${midY} ${ex} ${ey}`;
-    html += `<path d="${d}" fill="none" stroke="#C8C4BB" stroke-width="${e.dash ? .8 : .8}"${e.dash ? ' stroke-dasharray="5,3"' : ''} marker-end="url(#arr)"/>`;
+    html += `<path d="${d}" fill="none" stroke="${edgeColor}" stroke-width=".8"${e.dash ? ' stroke-dasharray="5,3"' : ''} marker-end="url(#arr)"/>`;
   });
 
   // 節點
