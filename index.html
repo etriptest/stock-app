@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light dark">
 <title>股票查詢</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -25,8 +26,8 @@
   --up-bg: #fff0f0;
   --dn-bg: #f0faf4;
 }
-@media(prefers-color-scheme: dark){
-  :root {
+@media(prefers-color-scheme: dark){ :root { --sys-dark:1; } }
+[data-theme="dark"] {
     --bg:    #111210;
     --card:  #1c1c1a;
     --card2: #242422;
@@ -38,7 +39,6 @@
     --neu-bg:#1e1e1c;
     --up-bg: #2a1015;
     --dn-bg: #0e1f15;
-  }
 }
 body.us {
   --up:    #007a3d;
@@ -46,12 +46,9 @@ body.us {
   --up-bg: #f0faf4;
   --dn-bg: #fff0f0;
 }
-@media(prefers-color-scheme: dark){
-  body.us {
-    --up-bg: #0e1f15;
-    --dn-bg: #2a1015;
-  }
-}
+[data-theme="dark"] body.us, [data-theme="dark"].us {
+  --up-bg: #0e1f15;
+  --dn-bg: #2a1015;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; overflow-x: hidden; }
@@ -98,11 +95,11 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 /* Search card */
 .s-card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 14px; margin-top: 14px; box-shadow: 0 1px 8px rgba(0,0,0,.06); }
 .s-label { font-size: 13px; color: var(--dim); margin-bottom: 9px; }
-.s-row   { display: flex; gap: 8px; align-items: stretch; }
-.s-wrap  { flex: 1; min-width: 0; position: relative; }
-.s-inp   { display: block; width: 100%; font-size: 18px; font-family: 'Noto Sans TC', sans-serif; padding: 11px 12px; border: 2px solid var(--bd); border-radius: 10px; background: var(--card2); color: var(--text); outline: none; transition: border-color .2s; }
+.s-row   { display: flex; gap: 8px; align-items: stretch; width: 100%; }
+.s-wrap  { flex: 1; min-width: 0; position: relative; overflow: hidden; }
+.s-inp   { display: block; width: 100%; font-size: 18px; font-family: 'Noto Sans TC', sans-serif; padding: 11px 12px; border: 2px solid var(--bd); border-radius: 10px; background: var(--card2); color: var(--text); outline: none; transition: border-color .2s; -webkit-appearance: none; appearance: none; color-scheme: light dark; }
 .s-inp:focus { border-color: var(--navy); }
-.s-inp::placeholder { color: #bbb; font-size: 15px; }
+.s-inp::placeholder { color: var(--dim); font-size: 15px; }
 .s-btn  { flex-shrink: 0; width: 72px; font-size: 16px; font-family: 'Noto Sans TC', sans-serif; font-weight: 700; background: var(--navy); color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background .2s; }
 .s-btn:hover    { background: var(--navy2); }
 .s-btn:disabled { background: #aaa; cursor: not-allowed; }
@@ -455,8 +452,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
     </div>
   </div>
 
-</div>
+<!-- Dark mode toggle -->
+<button id="theme-btn" onclick="toggleTheme()" title="切換深色/淺色模式" style="
+  position:fixed; bottom:20px; right:16px; z-index:900;
+  width:36px; height:36px; border-radius:50%;
+  background:var(--card); border:1px solid var(--bd);
+  cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.15); transition:background .2s, border-color .2s;
+" aria-label="切換深色模式">🌙</button>
 
+</div>
 <script>
 // ── 資料 ──────────────────────────────────────────────────────
 const TW_WATCH = [
@@ -882,7 +887,7 @@ function drawKLine(closes, highs, lows, vols, dates, currentPrice, tw){
   function py(p){ return PAD.top+cH*(1-(p-pMin)/pR); }
   const barGap=cW/n, barW=Math.max(1.5,barGap*0.6);
 
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   ctx.fillStyle = isDark ? '#1c1c1a' : '#fff';
   ctx.fillRect(0,0,W,TH);
 
@@ -1489,6 +1494,27 @@ setTimeout(checkAlerts, 3000);
 // 支援從供應鏈地圖跳轉後自動查詢
 const _autoq = new URLSearchParams(location.search).get('autoq');
 if(_autoq){ document.getElementById('inp').value=_autoq.toUpperCase(); setTimeout(doSearch,400); }
+
+// ── Dark mode toggle ──────────────────────────────────────────
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+}
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!isDark);
+}
+// 初始化：優先讀 localStorage，否則跟系統
+(function(){
+  const saved = localStorage.getItem('theme');
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : sysDark);
+  // 監聽系統變化（只在沒有手動設定時跟隨）
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) applyTheme(e.matches);
+  });
+})();
 </script>
 </body>
 </html>
