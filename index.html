@@ -568,20 +568,26 @@ const inp = document.getElementById('inp');
 const dd  = document.getElementById('dd');
 
 function fuzzy(q){
-  const ql=q.toLowerCase().trim();
-  if(!ql)return[];
-  const res=[];
+  const ql = q.toLowerCase().trim();
+  if(!ql) return [];
+  const res = [];
+
+  // 台股：代號前綴優先，再比對名稱
   for(const s of TW_DB){
-    if(s.c.startsWith(ql)||s.n.includes(q)||s.n.toLowerCase().includes(ql))
-      res.push({...s,m:'TW'});
-    if(res.length>=4)break;
+    if(res.length >= 5) break;
+    if(s.c.startsWith(ql) || s.c.startsWith(q) ||
+       s.n.includes(q) || s.n.toLowerCase().includes(ql))
+      res.push({...s, m:'TW'});
   }
+
+  // 美股：英文代號或名稱
   for(const s of US_DB){
-    if(res.length>=7)break;
-    if(s.c.toLowerCase().startsWith(ql)||s.n.toLowerCase().includes(ql))
-      res.push({...s,m:'US'});
+    if(res.length >= 8) break;
+    if(s.c.toLowerCase().startsWith(ql) || s.n.toLowerCase().includes(ql))
+      res.push({...s, m:'US'});
   }
-  return res.slice(0,7);
+
+  return res.slice(0, 8);
 }
 
 inp.addEventListener('input',()=>{
