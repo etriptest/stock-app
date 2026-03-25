@@ -1134,6 +1134,7 @@ async function doSearch(){
     if(hint) hint.textContent = tw ? '🇹🇼 紅漲綠跌' : '🇺🇸 綠漲紅跌';
 
     if(C.length >= 5){
+      _lastKLine = { C, H, L, V, dates, price: q.price, tw };
       drawKLine(C, H, L, V, dates, q.price, tw);
     } else {
       document.getElementById('kline-msg').style.display='block';
@@ -1496,10 +1497,18 @@ const _autoq = new URLSearchParams(location.search).get('autoq');
 if(_autoq){ document.getElementById('inp').value=_autoq.toUpperCase(); setTimeout(doSearch,400); }
 
 // ── Dark mode toggle ──────────────────────────────────────────
+// 記住最後一次 K 線資料，切換主題時重新繪製
+let _lastKLine = null;
+
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
   localStorage.setItem('theme', dark ? 'dark' : 'light');
+  // 如果有 K 線資料就重新畫
+  if (_lastKLine) {
+    const { C, H, L, V, dates, price, tw } = _lastKLine;
+    drawKLine(C, H, L, V, dates, price, tw);
+  }
 }
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1510,7 +1519,6 @@ function toggleTheme() {
   const saved = localStorage.getItem('theme');
   const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(saved ? saved === 'dark' : sysDark);
-  // 監聽系統變化（只在沒有手動設定時跟隨）
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (!localStorage.getItem('theme')) applyTheme(e.matches);
   });
