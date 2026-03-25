@@ -1251,10 +1251,6 @@ async function fetchAI(q,ind){
   }
 })();
 
-  }
-})();
-
-// ── 基本面數據 ────────────────────────────────────────────────
 // ── 自選股清單 ────────────────────────────────────────────────
 function getFavs(){ try{ return JSON.parse(localStorage.getItem('favs')||'[]'); }catch(_){ return []; } }
 function saveFavs(f){ localStorage.setItem('favs', JSON.stringify(f)); }
