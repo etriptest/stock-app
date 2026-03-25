@@ -392,7 +392,11 @@ function showInfo(nodeId, chainKey) {
   document.getElementById('info-desc').textContent = n.desc;
   const btn = document.getElementById('info-btn');
   btn.textContent = `查詢 ${n.label} (${n.code}) →`;
-  btn.href        = `/?q=${n.code}`;
+  btn.onclick = (e) => {
+    e.preventDefault();
+    window.location.href = `/?autoq=${encodeURIComponent(n.code)}`;
+  };
+  btn.href = `/?autoq=${encodeURIComponent(n.code)}`;
   document.getElementById('info-panel').classList.add('visible');
   document.getElementById('info-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
@@ -405,13 +409,6 @@ function showChain(key, el) {
 
 // 初始載入
 renderChain('semicon');
-
-// 從 URL 參數支援直接開啟查詢
-const urlQ = new URLSearchParams(location.search).get('q');
-if (urlQ) {
-  // 導回主頁查詢
-  location.href = `/?autoq=${urlQ}`;
-}
 </script>
 </body>
 </html>
