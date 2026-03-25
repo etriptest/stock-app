@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>產業供應鏈地圖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f4f2ed; --card:#fff; --card2:#faf9f6; --bd:#e2ddd5;
+  --text:#1a1a1a; --dim:#6b6460; --navy:#1e3a5f;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; }
+
+.hdr { background:var(--navy); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.hdr-title { font-size:18px; font-weight:700; }
+.hdr-sub   { font-size:12px; color:#8eabc8; margin-top:2px; }
+.back-btn  { font-size:13px; color:#8eabc8; text-decoration:none; display:flex; align-items:center; gap:4px; }
+.back-btn:hover { color:#fff; }
+
+.tabs-bar { background:var(--card); border-bottom:1px solid var(--bd); padding:0 16px; display:flex; gap:4px; overflow-x:auto; }
+.chain-tab { padding:12px 16px; font-size:14px; font-family:'Noto Sans TC',sans-serif; border:none; background:transparent; color:var(--dim); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; transition:.15s; }
+.chain-tab.on { color:var(--navy); border-bottom-color:var(--navy); font-weight:700; }
+
+.W { max-width:1200px; margin:0 auto; padding:16px; }
+
+.legend-bar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; padding:10px 14px; background:var(--card); border:1px solid var(--bd); border-radius:10px; font-size:12px; }
+.leg { display:flex; align-items:center; gap:5px; color:var(--dim); }
+.leg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.leg-line-solid { width:20px; height:2px; }
+.leg-line-dash  { width:20px; height:2px; background:repeating-linear-gradient(to right,#888 0,#888 4px,transparent 4px,transparent 7px); }
+
+.chain-wrap { background:var(--card); border:1px solid var(--bd); border-radius:14px; overflow:auto; padding:4px; }
+.chain-svg  { display:block; min-width:520px; }
+
+.node-card { cursor:pointer; transition:opacity .15s; }
+.node-card:hover { opacity:.75; }
+
+.info-panel { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:16px; margin-top:12px; display:none; }
+.info-panel.visible { display:block; animation:fadeIn .25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.info-name { font-size:18px; font-weight:700; margin-bottom:4px; }
+.info-code { font-size:13px; color:var(--dim); margin-bottom:10px; }
+.info-desc { font-size:14px; line-height:1.8; color:var(--text); margin-bottom:12px; }
+.info-role { display:inline-block; font-size:12px; padding:3px 10px; border-radius:20px; background:#f0ede5; color:var(--dim); margin-bottom:10px; }
+.query-btn { display:inline-block; padding:9px 20px; background:var(--navy); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; font-family:'Noto Sans TC',sans-serif; cursor:pointer; text-decoration:none; transition:.15s; }
+.query-btn:hover { background:#2a4f7a; }
+
+@media(max-width:480px){ .hdr-title{font-size:16px} }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-title">🗺 產業供應鏈地圖</div>
+    <div class="hdr-sub">點擊節點查看詳細說明，再跳轉查詢股票</div>
+  </div>
+  <a class="back-btn" href="/">← 回股票看板</a>
+</div>
+
+<div class="tabs-bar">
+  <button class="chain-tab on" onclick="showChain('semicon',this)">半導體 AI 供應鏈</button>
+  <button class="chain-tab" onclick="showChain('ev',this)">電動車供應鏈</button>
+  <button class="chain-tab" onclick="showChain('cloud',this)">雲端 AI 供應鏈</button>
+</div>
+
+<div class="W">
+
+  <div class="legend-bar">
+    <div class="leg"><div class="leg-dot" style="background:#E1F5EE;border:1px solid #5DCAA5"></div>上游材料／設備</div>
+    <div class="leg"><div class="leg-dot" style="background:#EEEDFE;border:1px solid #534AB7"></div>IC設計</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAECE7;border:1px solid #D85A30"></div>晶圓代工</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAEEDA;border:1px solid #EF9F27"></div>封裝／組裝</div>
+    <div class="leg"><div class="leg-dot" style="background:#F1EFE8;border:1px solid #888780"></div>系統整合</div>
+    <div class="leg"><div class="leg-dot" style="background:#E6F1FB;border:1px solid #378ADD"></div>終端客戶</div>
+    <div class="leg"><div class="leg-line-dash"></div>委託代工</div>
+  </div>
+
+  <div class="chain-wrap">
+    <svg id="chain-svg" class="chain-svg" width="100%" viewBox="0 0 760 820"></svg>
+  </div>
+
+  <div class="info-panel" id="info-panel">
+    <div class="info-role" id="info-role"></div>
+    <div class="info-name" id="info-name"></div>
+    <div class="info-code" id="info-code"></div>
+    <div class="info-desc" id="info-desc"></div>
+    <a class="query-btn" id="info-btn" href="#">查詢這支股票 →</a>
+  </div>
+
+</div>
+
+<script>
+// ── 供應鏈資料 ─────────────────────────────────────────────────
+const CHAINS = {
+
+  semicon: {
+    title: '半導體 AI 供應鏈',
+    tiers: [
+      { label:'上游 — 材料 ／ 設備', y:40 },
+      { label:'中游 — IC設計 ／ 晶圓代工', y:220 },
+      { label:'下游 — 封裝 ／ 記憶體', y:400 },
+      { label:'終端 — 系統整合', y:560 },
+      { label:'客戶 — 雲端 ／ 品牌', y:720 },
+    ],
+    nodes: [
+      // 上游
+      { id:'asml',   x:40,  y:58,  w:120, label:'ASML',     sub:'微影設備 🇳🇱',      color:'teal',   code:'ASML',   role:'上游設備',   desc:'全球唯一 EUV 微影設備製造商，沒有 ASML 就沒有先進晶片。台積電、三星、Intel 都要靠它。' },
+      { id:'shin',   x:175, y:58,  w:120, label:'信越化學',  sub:'矽晶圓 🇯🇵',        color:'teal',   code:'4063.T', role:'上游材料',   desc:'全球最大矽晶圓供應商，台積電主要原料來源之一。' },
+      { id:'gobj',   x:310, y:58,  w:120, label:'環球晶',    sub:'矽晶圓 6488 🇹🇼',   color:'teal',   code:'6488',   role:'上游材料',   desc:'台灣最大矽晶圓廠，全球第三大，是台積電的重要供應商。' },
+      { id:'amat',   x:445, y:58,  w:120, label:'AMAT',      sub:'沉積設備 🇺🇸',      color:'teal',   code:'AMAT',   role:'上游設備',   desc:'Applied Materials，全球最大半導體設備公司，提供薄膜沉積、蝕刻等設備。' },
+      { id:'kla',    x:580, y:58,  w:120, label:'KLA',       sub:'量測設備 🇺🇸',      color:'teal',   code:'KLAC',   role:'上游設備',   desc:'全球量測與檢測設備龍頭，確保晶片製造品質，台積電重要供應商。' },
+      // 中游
+      { id:'nvda',   x:40,  y:238, w:160, label:'NVIDIA',    sub:'GPU / AI設計 🇺🇸',  color:'purple', code:'NVDA',   role:'IC設計',     desc:'全球最重要的 AI 晶片設計公司，H100/B100 GPU 是 AI 訓練核心。所有主要雲端廠商都是大客戶。委託台積電代工。' },
+      { id:'amd',    x:215, y:238, w:120, label:'AMD',       sub:'CPU / GPU 🇺🇸',    color:'purple', code:'AMD',    role:'IC設計',     desc:'Intel 最大競爭對手，CPU 市佔持續上升，也有 AI 加速器產品，委託台積電代工。' },
+      { id:'tsmc',   x:350, y:238, w:160, label:'台積電',     sub:'晶圓代工 2330 🇹🇼', color:'coral',  code:'2330',   role:'晶圓代工',   desc:'全球最大晶圓代工廠，掌握最先進的 3nm / 2nm 製程。NVIDIA、Apple、AMD 全都靠台積電生產晶片。' },
+      { id:'umc',    x:525, y:238, w:120, label:'聯電',       sub:'晶圓代工 2303 🇹🇼', color:'gray',   code:'2303',   role:'晶圓代工',   desc:'台灣第二大晶圓代工廠，主攻成熟製程，客戶包含聯發科、高通。' },
+      { id:'mtk',    x:660, y:238, w:90,  label:'聯發科',     sub:'IC設計 2454 🇹🇼',   color:'purple', code:'2454',   role:'IC設計',     desc:'全球最大手機 IC 設計公司，旗艦 Dimensity 晶片委託台積電代工。' },
+      // 下游
+      { id:'asmpt',  x:40,  y:418, w:120, label:'日月光',     sub:'封裝 3711 🇹🇼',     color:'amber',  code:'3711',   role:'封裝測試',   desc:'全球最大封裝測試廠，提供先進封裝（SiP、CoWoS）服務，是台積電封裝合作夥伴。' },
+      { id:'hynix',  x:175, y:418, w:130, label:'SK Hynix',   sub:'HBM記憶體 🇰🇷',    color:'blue',   code:'000660.KS', role:'記憶體',  desc:'全球 HBM（高頻寬記憶體）第一，NVIDIA H100 內的 HBM 幾乎全來自 SK Hynix。' },
+      { id:'hon',    x:320, y:418, w:110, label:'鴻海',        sub:'代工組裝 2317 🇹🇼', color:'amber',  code:'2317',   role:'系統組裝',   desc:'全球最大電子代工廠，負責 iPhone、伺服器組裝，AI 伺服器需求強勁。' },
+      { id:'quanta', x:445, y:418, w:110, label:'廣達',        sub:'AI伺服器 2382 🇹🇼', color:'amber',  code:'2382',   role:'系統組裝',   desc:'全球最大筆電代工廠，同時是最大 AI 伺服器廠，Google、Meta 的伺服器大多由廣達代工。' },
+      { id:'sil',    x:570, y:418, w:110, label:'矽品',        sub:'封裝 2325 🇹🇼',     color:'amber',  code:'2325',   role:'封裝測試',   desc:'台灣第二大封裝廠，已與日月光合併（ASE集團），提供先進封裝服務。' },
+      // 終端
+      { id:'dell',   x:40,  y:578, w:120, label:'Dell',       sub:'伺服器 🇺🇸',        color:'gray',   code:'DELL',   role:'系統整合',   desc:'全球最大伺服器廠商之一，AI 伺服器需求帶動業績大幅成長。' },
+      { id:'apple',  x:175, y:578, w:110, label:'Apple',      sub:'自研晶片 🇺🇸',      color:'gray',   code:'AAPL',   role:'終端品牌',   desc:'A 系列、M 系列晶片全由台積電生產，是台積電最大客戶之一。' },
+      { id:'qcom',   x:300, y:578, w:120, label:'Qualcomm',   sub:'手機晶片 🇺🇸',      color:'gray',   code:'QCOM',   role:'IC設計',     desc:'全球最大手機基頻晶片廠，Snapdragon 系列委託台積電和三星代工。' },
+      { id:'avgo',   x:435, y:578, w:120, label:'Broadcom',   sub:'網路晶片 🇺🇸',      color:'gray',   code:'AVGO',   role:'IC設計',     desc:'全球網路晶片龍頭，AI 交換器晶片需求暴增，也替 Google 設計 TPU 晶片。' },
+      { id:'arm',    x:570, y:578, w:110, label:'ARM',        sub:'IP授權 🇬🇧',        color:'gray',   code:'ARM',    role:'IP授權',     desc:'幾乎所有手機晶片和 AI 晶片都使用 ARM 架構，按晶片顆數收授權費。' },
+      // 客戶
+      { id:'msft',   x:40,  y:738, w:120, label:'Microsoft',  sub:'Azure AI 🇺🇸',      color:'blue',   code:'MSFT',   role:'雲端客戶',   desc:'最大 NVIDIA 客戶之一，Azure 雲端大量部署 H100，也是 OpenAI 最大投資方。' },
+      { id:'goog',   x:175, y:738, w:110, label:'Google',     sub:'GCP / TPU 🇺🇸',    color:'blue',   code:'GOOGL',  role:'雲端客戶',   desc:'自研 TPU 委託台積電生產，同時也是 NVIDIA GPU 大客戶。' },
+      { id:'meta',   x:300, y:738, w:100, label:'Meta',       sub:'AI訓練 🇺🇸',        color:'blue',   code:'META',   role:'雲端客戶',   desc:'全球最大 NVIDIA GPU 採購商之一，大量用於 AI 訓練和推薦系統。' },
+      { id:'amzn',   x:415, y:738, w:110, label:'Amazon',     sub:'AWS 🇺🇸',           color:'blue',   code:'AMZN',   role:'雲端客戶',   desc:'AWS 是全球最大雲端服務，自研 Trainium/Inferentia 晶片委託台積電生產。' },
+      { id:'tsla',   x:540, y:738, w:110, label:'Tesla',      sub:'自動駕駛 🇺🇸',      color:'blue',   code:'TSLA',   role:'終端客戶',   desc:'自研 Dojo AI 訓練晶片委託台積電生產，同時採購 NVIDIA GPU。' },
+    ],
+    edges: [
+      // 上游 → 台積電
+      { from:'asml',  to:'tsmc', dash:false },
+      { from:'shin',  to:'tsmc', dash:false },
+      { from:'gobj',  to:'tsmc', dash:false },
+      { from:'amat',  to:'tsmc', dash:false },
+      { from:'kla',   to:'tsmc', dash:false },
+      // 上游 → NVDA
+      { from:'asml',  to:'nvda', dash:false },
+      // NVDA → TSMC (委託)
+      { from:'nvda',  to:'tsmc', dash:true },
+      { from:'amd',   to:'tsmc', dash:true },
+      { from:'mtk',   to:'tsmc', dash:true },
+      // TSMC → 封裝
+      { from:'tsmc',  to:'asmpt', dash:false },
+      { from:'tsmc',  to:'hynix', dash:true },
+      { from:'tsmc',  to:'sil',   dash:false },
+      // NVDA → 組裝
+      { from:'nvda',  to:'quanta', dash:false },
+      { from:'nvda',  to:'hon',    dash:false },
+      // 封裝 → 終端
+      { from:'asmpt', to:'dell',  dash:false },
+      { from:'quanta',to:'msft',  dash:false },
+      { from:'quanta',to:'goog',  dash:false },
+      { from:'hon',   to:'apple', dash:false },
+      // 終端 → 客戶
+      { from:'apple', to:'msft',  dash:false },
+      { from:'avgo',  to:'goog',  dash:false },
+      { from:'arm',   to:'qcom',  dash:false },
+    ],
+  },
+
+  ev: {
+    title: '電動車供應鏈',
+    tiers: [
+      { label:'上游 — 原物料', y:40 },
+      { label:'中游 — 電池 ／ 零組件', y:220 },
+      { label:'整車 — 電動車品牌', y:400 },
+      { label:'下游 — 充電 ／ 軟體', y:560 },
+      { label:'終端 — 消費者市場', y:700 },
+    ],
+    nodes: [
+      // 上游
+      { id:'alb',   x:40,  y:58,  w:120, label:'Albemarle', sub:'鋰礦 🇺🇸',         color:'teal',   code:'ALB',    role:'原物料',     desc:'全球最大鋰礦公司，電池原料鋰的主要供應商，電動車需求直接影響股價。' },
+      { id:'ganf',  x:175, y:58,  w:120, label:'贛鋒鋰業',  sub:'鋰礦 🇨🇳',         color:'teal',   code:'002460', role:'原物料',     desc:'中國最大鋰礦公司，全球鋰資源開發龍頭。' },
+      { id:'mp',    x:310, y:58,  w:120, label:'MP Materials',sub:'稀土 🇺🇸',        color:'teal',   code:'MP',     role:'原物料',     desc:'美國唯一稀土礦山，永磁材料是電動馬達的關鍵材料。' },
+      { id:'vale',  x:445, y:58,  w:120, label:'Vale',      sub:'鎳礦 🇧🇷',         color:'teal',   code:'VALE',   role:'原物料',     desc:'全球最大鎳礦公司，高鎳三元電池是目前主流，需求大。' },
+      // 中游
+      { id:'catl',  x:40,  y:238, w:130, label:'寧德時代',   sub:'電池 🇨🇳',         color:'purple', code:'300750', role:'電池製造',   desc:'全球最大動力電池廠，市佔率超過 35%，特斯拉、BMW、Volkswagen 都是客戶。' },
+      { id:'lges',  x:185, y:238, w:120, label:'LG Energy',  sub:'電池 🇰🇷',         color:'purple', code:'373220.KS', role:'電池製造', desc:'全球第二大動力電池廠，特斯拉、GM、現代汽車的電池供應商。' },
+      { id:'pana',  x:320, y:238, w:120, label:'Panasonic', sub:'電池 🇯🇵',         color:'purple', code:'6752.T', role:'電池製造',   desc:'特斯拉 Model S/3 主要電池合作夥伴，在內華達 Gigafactory 合資生產。' },
+      { id:'byd',   x:455, y:238, w:110, label:'比亞迪',     sub:'電池+整車 🇨🇳',    color:'coral',  code:'002594', role:'垂直整合',   desc:'全球電動車銷量第一（與特斯拉競爭），自產電池、晶片、馬達，垂直整合度最高。' },
+      { id:'on',    x:580, y:238, w:120, label:'onsemi',    sub:'功率半導體 🇺🇸',    color:'purple', code:'ON',     role:'零組件',     desc:'車用功率半導體龍頭，電動車逆變器的關鍵元件供應商。' },
+      // 整車
+      { id:'tsla2', x:40,  y:418, w:120, label:'Tesla',     sub:'電動車 🇺🇸',        color:'coral',  code:'TSLA',   role:'整車品牌',   desc:'全球最有品牌價值的電動車公司，自動駕駛 FSD 是最大差異化優勢，Gigafactory 遍布全球。' },
+      { id:'gm',    x:175, y:418, w:110, label:'GM',        sub:'電動車 🇺🇸',        color:'coral',  code:'GM',     role:'整車品牌',   desc:'美國傳統車廠轉型電動車，Ultium 電池平台搭配 LG Energy 電池。' },
+      { id:'vw',    x:300, y:418, w:110, label:'Volkswagen',sub:'電動車 🇩🇪',        color:'coral',  code:'VOW3.DE',role:'整車品牌',   desc:'歐洲最大車廠，ID.4 等車型在全球熱銷，電動化轉型積極。' },
+      { id:'hyun',  x:425, y:418, w:120, label:'現代起亞',  sub:'電動車 🇰🇷',        color:'coral',  code:'005380.KS',role:'整車品牌', desc:'IONIQ 6 獲年度最佳電動車，電動化轉型速度在傳統車廠中最快之一。' },
+      { id:'li',    x:560, y:418, w:110, label:'理想汽車',  sub:'增程電動 🇨🇳',      color:'coral',  code:'LI',     role:'整車品牌',   desc:'中國增程式電動車龍頭，已在美股上市，聚焦家庭用戶市場。' },
+      // 下游
+      { id:'chpt',  x:40,  y:578, w:120, label:'ChargePoint',sub:'充電樁 🇺🇸',       color:'gray',   code:'CHPT',   role:'充電服務',   desc:'北美最大電動車充電網路運營商，充電樁數量超過 25 萬個。' },
+      { id:'mobileye',x:175,y:578,w:130,label:'Mobileye',   sub:'自駕晶片 🇮🇱',      color:'gray',   code:'MBLY',   role:'自駕技術',   desc:'全球最大自動駕駛技術供應商，提供 ADAS 感測器融合方案，已分拆上市。' },
+      { id:'aptv',  x:320, y:578, w:110, label:'Aptiv',     sub:'電子架構 🇮🇪',      color:'gray',   code:'APTV',   role:'零組件',     desc:'全球最大汽車電子架構供應商，負責車內線束和電子控制系統。' },
+      { id:'tsla3', x:445, y:578, w:110, label:'Tesla FSD', sub:'自駕軟體 🇺🇸',      color:'gray',   code:'TSLA',   role:'自駕軟體',   desc:'特斯拉完全自動駕駛軟體，是未來最大收入來源之一，每輛車訂閱制。' },
+      // 消費市場
+      { id:'uber',  x:40,  y:718, w:110, label:'Uber',      sub:'叫車平台 🇺🇸',      color:'blue',   code:'UBER',   role:'出行平台',   desc:'自動駕駛普及後最大受益者之一，Robotaxi 是未來競爭主戰場。' },
+      { id:'fleet', x:165, y:718, w:120, label:'Hertz',     sub:'租車車隊 🇺🇸',      color:'blue',   code:'HTZZ',   role:'車隊採購',   desc:'全球最大租車公司，大量採購特斯拉做為車隊電動化。' },
+      { id:'xpeng', x:300, y:718, w:110, label:'小鵬汽車',  sub:'智慧電動 🇨🇳',      color:'blue',   code:'XPEV',   role:'整車品牌',   desc:'中國自動駕駛技術領先的電動車品牌，XNGP 系統已接近 L3 水準。' },
+      { id:'nio',   x:425, y:718, w:100, label:'蔚來',      sub:'換電模式 🇨🇳',      color:'blue',   code:'NIO',    role:'整車品牌',   desc:'中國高端電動車品牌，首創換電站模式，已在美股和港股上市。' },
+    ],
+    edges: [
+      { from:'alb',   to:'catl',  dash:false },
+      { from:'alb',   to:'lges',  dash:false },
+      { from:'ganf',  to:'catl',  dash:false },
+      { from:'vale',  to:'catl',  dash:false },
+      { from:'vale',  to:'lges',  dash:false },
+      { from:'mp',    to:'byd',   dash:false },
+      { from:'catl',  to:'tsla2', dash:false },
+      { from:'catl',  to:'vw',    dash:false },
+      { from:'catl',  to:'hyun',  dash:false },
+      { from:'lges',  to:'tsla2', dash:false },
+      { from:'lges',  to:'gm',    dash:false },
+      { from:'pana',  to:'tsla2', dash:false },
+      { from:'on',    to:'tsla2', dash:false },
+      { from:'on',    to:'gm',    dash:false },
+      { from:'byd',   to:'xpeng', dash:false },
+      { from:'tsla2', to:'uber',  dash:false },
+      { from:'tsla2', to:'fleet', dash:false },
+      { from:'mobileye', to:'vw', dash:false },
+      { from:'mobileye', to:'hyun', dash:false },
+      { from:'tsla3', to:'uber',  dash:true  },
+      { from:'chpt',  to:'tsla2', dash:false },
+      { from:'li',    to:'nio',   dash:false },
+    ],
+  },
+
+  cloud: {
+    title: '雲端 AI 供應鏈',
+    tiers: [
+      { label:'基礎設施 — 硬體', y:40 },
+      { label:'雲端平台 — IaaS', y:220 },
+      { label:'AI 模型 — 大語言模型', y:400 },
+      { label:'AI 應用 — SaaS', y:560 },
+      { label:'終端 — 企業用戶', y:700 },
+    ],
+    nodes: [
+      // 硬體
+      { id:'nvda2', x:40,  y:58,  w:140, label:'NVIDIA',    sub:'GPU H100/B200 🇺🇸',color:'purple', code:'NVDA',   role:'AI硬體',     desc:'H100 是目前 AI 訓練最重要的 GPU，幾乎所有 AI 公司都在搶購，等待期長達數月。' },
+      { id:'amd2',  x:195, y:58,  w:120, label:'AMD',       sub:'MI300X GPU 🇺🇸',   color:'purple', code:'AMD',    role:'AI硬體',     desc:'MI300X 是 H100 的主要競爭對手，微軟、Meta 已開始大量採購。' },
+      { id:'avgo2', x:330, y:58,  w:120, label:'Broadcom',  sub:'AI交換器晶片 🇺🇸',  color:'purple', code:'AVGO',   role:'網路設備',   desc:'Tomahawk 交換器晶片是 AI 資料中心網路核心，也替 Google、Meta 設計自研 AI 晶片。' },
+      { id:'smci',  x:465, y:58,  w:130, label:'Super Micro',sub:'AI伺服器 🇺🇸',     color:'teal',   code:'SMCI',   role:'伺服器製造', desc:'NVIDIA DGX 系統主要組裝夥伴，AI 伺服器市佔迅速成長。' },
+      { id:'quanta2',x:610,y:58,  w:120, label:'廣達',       sub:'AI伺服器 2382 🇹🇼', color:'teal',   code:'2382',   role:'伺服器製造', desc:'Google、Meta 資料中心伺服器主要供應商，受惠 AI 資本支出暴增。' },
+      // 雲端平台
+      { id:'aws',   x:40,  y:238, w:120, label:'AWS',       sub:'Amazon雲端 🇺🇸',   color:'coral',  code:'AMZN',   role:'雲端平台',   desc:'全球最大雲端服務，市佔約 33%，自研 Trainium 晶片用於 AI 訓練。' },
+      { id:'azure', x:175, y:238, w:120, label:'Azure',     sub:'微軟雲端 🇺🇸',      color:'coral',  code:'MSFT',   role:'雲端平台',   desc:'全球第二大雲端，OpenAI 獨家合作夥伴，Azure OpenAI Service 企業需求爆發。' },
+      { id:'gcp',   x:310, y:238, w:120, label:'GCP',       sub:'Google雲端 🇺🇸',   color:'coral',  code:'GOOGL',  role:'雲端平台',   desc:'全球第三大雲端，TPU 是自研 AI 晶片，Gemini 模型整合進 Google Workspace。' },
+      { id:'ali',   x:445, y:238, w:110, label:'阿里雲',     sub:'中國雲端 🇨🇳',     color:'coral',  code:'BABA',   role:'雲端平台',   desc:'中國最大雲端服務，通義千問大模型持續迭代，在中國企業市場佔主導。' },
+      { id:'ora',   x:570, y:238, w:120, label:'Oracle',    sub:'企業雲端 🇺🇸',      color:'coral',  code:'ORCL',   role:'雲端平台',   desc:'企業資料庫龍頭轉型雲端，成為 OpenAI 最新資料中心合作夥伴。' },
+      // AI 模型
+      { id:'oai',   x:40,  y:418, w:120, label:'OpenAI',    sub:'GPT / Sora 🇺🇸',   color:'purple', code:'MSFT',   role:'AI模型',     desc:'ChatGPT 開發商，GPT-4 是目前最廣泛使用的 AI 模型，微軟獨家雲端合作。未上市，可間接投資微軟。' },
+      { id:'goo2',  x:175, y:418, w:120, label:'Google DeepMind',sub:'Gemini 🇺🇸',  color:'purple', code:'GOOGL',  role:'AI模型',     desc:'Gemini Ultra 是 GPT-4 主要競爭對手，整合進 Google 所有產品。' },
+      { id:'anth',  x:310, y:418, w:120, label:'Anthropic', sub:'Claude 🇺🇸',       color:'purple', code:'AMZN',   role:'AI模型',     desc:'Claude 模型開發商，Amazon 最大投資方（40億美元），未上市可間接投資 Amazon。' },
+      { id:'meta2', x:445, y:418, w:120, label:'Meta AI',   sub:'Llama 開源 🇺🇸',   color:'purple', code:'META',   role:'AI模型',     desc:'Llama 系列開源模型，全球下載量最大的開源 AI 模型，大幅降低 AI 應用門檻。' },
+      { id:'xai',   x:580, y:418, w:110, label:'xAI',       sub:'Grok 🇺🇸',         color:'purple', code:'TSLA',   role:'AI模型',     desc:'馬斯克創辦，Grok 整合進 X（Twitter），未上市可間接關注特斯拉。' },
+      // AI 應用
+      { id:'msft2', x:40,  y:578, w:130, label:'Microsoft 365',sub:'Copilot 🇺🇸',   color:'gray',   code:'MSFT',   role:'AI應用',     desc:'Copilot 整合進 Word/Excel/Teams，每個企業用戶每月多付 30 美元，是微軟 AI 最大營收來源。' },
+      { id:'sf',    x:185, y:578, w:120, label:'Salesforce',sub:'AI CRM 🇺🇸',        color:'gray',   code:'CRM',    role:'AI應用',     desc:'全球最大 CRM 公司，Einstein AI 整合銷售、服務、行銷各模組。' },
+      { id:'snow',  x:320, y:578, w:120, label:'Snowflake', sub:'AI資料倉儲 🇺🇸',    color:'gray',   code:'SNOW',   role:'AI應用',     desc:'雲端資料倉儲龍頭，AI 時代企業資料管理需求大增，是 AI 落地的關鍵基礎設施。' },
+      { id:'pltr',  x:455, y:578, w:110, label:'Palantir', sub:'AI決策 🇺🇸',         color:'gray',   code:'PLTR',   role:'AI應用',     desc:'政府和企業 AI 決策平台，AIP（AI Platform）是目前最快成長業務。' },
+      { id:'svc',   x:580, y:578, w:110, label:'ServiceNow',sub:'企業AI 🇺🇸',        color:'gray',   code:'NOW',    role:'AI應用',     desc:'企業流程自動化龍頭，AI 整合進 IT、HR、客服工作流，升級黏性極高。' },
+      // 終端
+      { id:'ent1',  x:40,  y:718, w:130, label:'金融業',    sub:'AI風控 / 客服',      color:'blue',   code:'JPM',    role:'企業客戶',   desc:'金融業是 AI 最大企業用戶，用於風控、量化交易、客戶服務自動化。' },
+      { id:'ent2',  x:185, y:718, w:130, label:'醫療健康',  sub:'AI診斷 / 新藥',      color:'blue',   code:'ISRG',   role:'企業客戶',   desc:'AI 用於影像診斷、新藥研發，縮短藥物開發周期從 10 年到 2-3 年。' },
+      { id:'ent3',  x:330, y:718, w:120, label:'製造業',    sub:'AI品管 / 預測',      color:'blue',   code:'HON',    role:'企業客戶',   desc:'工廠 AI 視覺檢測、預測性維護、供應鏈優化是最快落地的 AI 應用。' },
+      { id:'ent4',  x:465, y:718, w:110, label:'零售業',    sub:'個人化推薦',         color:'blue',   code:'AMZN',   role:'企業客戶',   desc:'Amazon、Shopify 的 AI 推薦系統直接影響 GMV，個人化廣告效果提升明顯。' },
+    ],
+    edges: [
+      { from:'nvda2',  to:'aws',   dash:false },
+      { from:'nvda2',  to:'azure', dash:false },
+      { from:'nvda2',  to:'gcp',   dash:false },
+      { from:'amd2',   to:'azure', dash:false },
+      { from:'amd2',   to:'aws',   dash:false },
+      { from:'avgo2',  to:'gcp',   dash:false },
+      { from:'smci',   to:'aws',   dash:false },
+      { from:'quanta2',to:'gcp',   dash:false },
+      { from:'quanta2',to:'azure', dash:false },
+      { from:'aws',    to:'anth',  dash:false },
+      { from:'azure',  to:'oai',   dash:false },
+      { from:'gcp',    to:'goo2',  dash:false },
+      { from:'meta2',  to:'aws',   dash:true  },
+      { from:'oai',    to:'msft2', dash:false },
+      { from:'goo2',   to:'sf',    dash:false },
+      { from:'anth',   to:'svc',   dash:false },
+      { from:'msft2',  to:'ent1',  dash:false },
+      { from:'msft2',  to:'ent2',  dash:false },
+      { from:'sf',     to:'ent1',  dash:false },
+      { from:'sf',     to:'ent3',  dash:false },
+      { from:'snow',   to:'ent4',  dash:false },
+      { from:'pltr',   to:'ent1',  dash:false },
+      { from:'pltr',   to:'ent2',  dash:false },
+      { from:'svc',    to:'ent3',  dash:false },
+    ],
+  },
+};
+
+// ── 顏色 ──────────────────────────────────────────────────────
+const COLORS = {
+  teal:   { fill:'#E1F5EE', stroke:'#5DCAA5', text:'#085041' },
+  purple: { fill:'#EEEDFE', stroke:'#534AB7', text:'#26215C' },
+  coral:  { fill:'#FAECE7', stroke:'#D85A30', text:'#4A1B0C' },
+  amber:  { fill:'#FAEEDA', stroke:'#EF9F27', text:'#412402' },
+  gray:   { fill:'#F1EFE8', stroke:'#888780', text:'#2C2C2A' },
+  blue:   { fill:'#E6F1FB', stroke:'#378ADD', text:'#042C53' },
+};
+
+// ── 計算節點中心 ────────────────────────────────────────────────
+function nodeCenter(n) {
+  return { cx: n.x + n.w / 2, cy: n.y + 26 };
+}
+
+// ── 算箭頭端點（從一個矩形邊緣到另一個） ──────────────────────
+function edgePoints(from, to) {
+  const fc = nodeCenter(from), tc = nodeCenter(to);
+  const dx = tc.cx - fc.cx, dy = tc.cy - fc.cy;
+  // 出發點：下邊中心
+  const sx = fc.cx, sy = from.y + 52;
+  // 終點：上邊中心
+  const ex = tc.cx, ey = to.y;
+  return { sx, sy, ex, ey };
+}
+
+// ── 繪製供應鏈 ─────────────────────────────────────────────────
+let currentChain = 'semicon';
+
+function renderChain(chainKey) {
+  currentChain = chainKey;
+  const chain = CHAINS[chainKey];
+  const svg   = document.getElementById('chain-svg');
+  const nodeMap = {};
+  chain.nodes.forEach(n => nodeMap[n.id] = n);
+
+  // 計算最大 y（決定 viewBox 高度）
+  const maxY = Math.max(...chain.nodes.map(n => n.y + 52)) + 40;
+  const maxX = Math.max(...chain.nodes.map(n => n.x + n.w)) + 20;
+  svg.setAttribute('viewBox', `0 0 ${Math.max(maxX, 760)} ${maxY}`);
+
+  let html = `<defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>`;
+
+  // 層級標題
+  chain.tiers.forEach(t => {
+    html += `<text x="16" y="${t.y + 14}" font-size="10" font-weight="500" fill="#888" font-family="sans-serif" letter-spacing=".5">${t.label}</text>`;
+  });
+
+  // 連接線
+  chain.edges.forEach(e => {
+    const from = nodeMap[e.from], to = nodeMap[e.to];
+    if (!from || !to) return;
+    const { sx, sy, ex, ey } = edgePoints(from, to);
+    const midY = (sy + ey) / 2;
+    const d    = `M${sx} ${sy} C${sx} ${midY} ${ex} ${midY} ${ex} ${ey}`;
+    html += `<path d="${d}" fill="none" stroke="#C8C4BB" stroke-width="${e.dash ? .8 : .8}"${e.dash ? ' stroke-dasharray="5,3"' : ''} marker-end="url(#arr)"/>`;
+  });
+
+  // 節點
+  chain.nodes.forEach(n => {
+    const c = COLORS[n.color] || COLORS.gray;
+    html += `
+      <g class="node-card" onclick="showInfo('${n.id}','${chainKey}')">
+        <rect x="${n.x}" y="${n.y}" width="${n.w}" height="52" rx="8"
+          fill="${c.fill}" stroke="${c.stroke}" stroke-width=".8"/>
+        <text x="${n.x + n.w/2}" y="${n.y + 18}" text-anchor="middle"
+          font-size="13" font-weight="500" fill="${c.text}" font-family="sans-serif">${n.label}</text>
+        <text x="${n.x + n.w/2}" y="${n.y + 36}" text-anchor="middle"
+          font-size="10" fill="${c.text}" font-family="sans-serif" opacity=".8">${n.sub}</text>
+      </g>`;
+  });
+
+  svg.innerHTML = html;
+  document.getElementById('info-panel').classList.remove('visible');
+}
+
+function showInfo(nodeId, chainKey) {
+  const chain = CHAINS[chainKey];
+  const n     = chain.nodes.find(x => x.id === nodeId);
+  if (!n) return;
+  document.getElementById('info-role').textContent = n.role;
+  document.getElementById('info-name').textContent = n.label;
+  document.getElementById('info-code').textContent = `代號：${n.code}`;
+  document.getElementById('info-desc').textContent = n.desc;
+  const btn = document.getElementById('info-btn');
+  btn.textContent = `查詢 ${n.label} (${n.code}) →`;
+  btn.href        = `/?q=${n.code}`;
+  document.getElementById('info-panel').classList.add('visible');
+  document.getElementById('info-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function showChain(key, el) {
+  document.querySelectorAll('.chain-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  renderChain(key);
+}
+
+// 初始載入
+renderChain('semicon');
+
+// 從 URL 參數支援直接開啟查詢
+const urlQ = new URLSearchParams(location.search).get('q');
+if (urlQ) {
+  // 導回主頁查詢
+  location.href = `/?autoq=${urlQ}`;
+}
+</script>
+</body>
+</html>
