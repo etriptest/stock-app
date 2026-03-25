@@ -1005,11 +1005,12 @@ function renderHealthCheck(fund, price) {
   let growthCheck;
   if (isTWStock && fund._recentGrowth != null) {
     const g = fund._recentGrowth;
-    if (g > 20)       growthCheck = { dot:'red',    text:`近 3 個月累積上漲 ${g}%，漲勢強勁`, val:`近60日 +${g}%` };
-    else if (g > 5)   growthCheck = { dot:'red',    text:`近 3 個月累積上漲 ${g}%，走勢偏強`, val:`近60日 +${g}%` };
-    else if (g > -5)  growthCheck = { dot:'yellow', text:`近 3 個月股價變動不大（${g}%），整理中`, val:`近60日 ${g}%` };
-    else if (g > -20) growthCheck = { dot:'green',  text:`近 3 個月累積下跌 ${g}%，走勢偏弱`, val:`近60日 ${g}%` };
-    else              growthCheck = { dot:'green',  text:`近 3 個月累積下跌 ${g}%，跌幅較深`, val:`近60日 ${g}%` };
+    const lb = fund._recentLabel || '近期';
+    if (g > 20)       growthCheck = { dot:'red',    text:`${lb}累積上漲 ${g}%，漲勢強勁`, val:`${lb} +${g}%` };
+    else if (g > 5)   growthCheck = { dot:'red',    text:`${lb}累積上漲 ${g}%，走勢偏強`, val:`${lb} +${g}%` };
+    else if (g > -5)  growthCheck = { dot:'yellow', text:`${lb}股價變動不大（${g}%），整理中`, val:`${lb} ${g}%` };
+    else if (g > -20) growthCheck = { dot:'green',  text:`${lb}累積下跌 ${Math.abs(g)}%，走勢偏弱`, val:`${lb} ${g}%` };
+    else              growthCheck = { dot:'green',  text:`${lb}累積下跌 ${Math.abs(g)}%，跌幅較深`, val:`${lb} ${g}%` };
   } else {
     growthCheck = interpretGrowth(fund.revenueGrowth, fund.earningsGrowth);
   }
@@ -1119,10 +1120,19 @@ async function fetchTWFundamentals(sn, price, klineData) {
   const ma20 = C.length >= 20 ? +(C.slice(-20).reduce((a,b)=>a+b,0)/20).toFixed(2) : null;
   const ma60 = C.length >= 60 ? +(C.slice(-60).reduce((a,b)=>a+b,0)/60).toFixed(2) : null;
 
-  // 近期漲跌（計算成長動能替代）
-  const recentGrowth = C.length >= 60
-    ? +((price - C[C.length-60]) / C[C.length-60] * 100).toFixed(1)
-    : null;
+  // 近期漲跌：優先用 60 日，不夠就用 20 日
+  let recentGrowth = null;
+  let recentLabel = '';
+  if (C.length >= 60) {
+    recentGrowth = +((price - C[C.length-60]) / C[C.length-60] * 100).toFixed(1);
+    recentLabel = '近3個月';
+  } else if (C.length >= 20) {
+    recentGrowth = +((price - C[C.length-20]) / C[C.length-20] * 100).toFixed(1);
+    recentLabel = '近1個月';
+  } else if (C.length >= 5) {
+    recentGrowth = +((price - C[0]) / C[0] * 100).toFixed(1);
+    recentLabel = `近${C.length}日`;
+  }
 
   return {
     ok: true,
@@ -1138,6 +1148,7 @@ async function fetchTWFundamentals(sn, price, klineData) {
     _tw: true,
     _ma: { ma5, ma20, ma60 },
     _recentGrowth: recentGrowth,
+    _recentLabel: recentLabel,
   };
 }
 
