@@ -1030,11 +1030,23 @@ function renderHealthCheck(fund, price) {
     marginCheck = interpretMargin(fund.grossMargin, fund.opMargin);
   }
 
+  // 台股財務健康：改用股價淨值比（TWSE 有提供）
+  let debtCheck;
+  if (isTWStock && fund._pb != null) {
+    const pb = fund._pb;
+    if (pb < 1)      debtCheck = { dot:'green',  text:`股價淨值比 ${pb} 倍，低於帳面價值，相對便宜`, val:`P/B: ${pb}` };
+    else if (pb < 2) debtCheck = { dot:'green',  text:`股價淨值比 ${pb} 倍，合理範圍內`, val:`P/B: ${pb}` };
+    else if (pb < 4) debtCheck = { dot:'yellow', text:`股價淨值比 ${pb} 倍，稍微偏貴，但成長股通常較高`, val:`P/B: ${pb}` };
+    else             debtCheck = { dot:'red',     text:`股價淨值比 ${pb} 倍，相對較貴`, val:`P/B: ${pb}` };
+  } else {
+    debtCheck = interpretDebt(fund.debtRatio);
+  }
+
   const checks = [
     { label:'💰 本益比評估', ...interpretPE(fund.pe ?? fund.forwardPE) },
     { label:'📈 近期走勢',   ...growthCheck },
     { label:'📏 均線位置',   ...marginCheck },
-    { label:'🏦 財務健康',   ...interpretDebt(fund.debtRatio) },
+    { label:'🏦 財務健康',   ...debtCheck },
     { label:'🎯 52週位置',   ...interpretPos(price, fund.week52Low, fund.week52High) },
   ];
 
@@ -1045,9 +1057,10 @@ function renderHealthCheck(fund, price) {
 
   const extras=[];
   if(fund.pe)           extras.push(`本益比 ${fund.pe} 倍`);
+  if(fund._pb)          extras.push(`淨值比 ${fund._pb} 倍`);
+  if(fund.dividendYield && fund.dividendYield > 0) extras.push(`殖利率 ${fund.dividendYield}%`);
   if(fund.eps)          extras.push(`EPS $${fund.eps}`);
   if(fund.targetPrice)  extras.push(`目標價 $${fund.targetPrice}`);
-  if(fund.dividendYield && fund.dividendYield > 0) extras.push(`殖利率 ${fund.dividendYield}%`);
   if(fund.beta)         extras.push(`Beta ${fund.beta}`);
 
   const dataNote = grayCount >= 3
@@ -1094,35 +1107,14 @@ async function fetchHealthAndNews(sn, price, klineData) {
 async function fetchTWFundamentals(sn, price, klineData) {
   const { C=[], H=[], L=[] } = klineData || {};
 
-  // 從 K 線算 52 週高低（約 240 個交易日）
   const w52H = H.length ? Math.max(...H) : null;
   const w52L = L.length ? Math.min(...L) : null;
 
-  let pe = null, eps = null, dividendYield = null;
-
-  try {
-    // TWSE 本益比資料（每日盤後）
-    const today = new Date();
-    const ym = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
-    const res = await fetch(`/api/history/${sn}?ym=${ym}`).catch(()=>null);
-    if (res && res.ok) {
-      const d = await res.json();
-      const rows = d.data || [];
-      // 最後一筆有 pe 欄位的資料
-      for (let i = rows.length-1; i >= 0; i--) {
-        if (rows[i].pe && rows[i].pe > 0) { pe = +rows[i].pe.toFixed(1); break; }
-      }
-    }
-  } catch(_) {}
-
-  // 計算均線位置（用 K 線資料）
   const ma5  = C.length >= 5  ? +(C.slice(-5).reduce((a,b)=>a+b,0)/5).toFixed(2)  : null;
   const ma20 = C.length >= 20 ? +(C.slice(-20).reduce((a,b)=>a+b,0)/20).toFixed(2) : null;
   const ma60 = C.length >= 60 ? +(C.slice(-60).reduce((a,b)=>a+b,0)/60).toFixed(2) : null;
 
-  // 近期漲跌：優先用 60 日，不夠就用 20 日
-  let recentGrowth = null;
-  let recentLabel = '';
+  let recentGrowth = null, recentLabel = '';
   if (C.length >= 60) {
     recentGrowth = +((price - C[C.length-60]) / C[C.length-60] * 100).toFixed(1);
     recentLabel = '近3個月';
@@ -1134,21 +1126,29 @@ async function fetchTWFundamentals(sn, price, klineData) {
     recentLabel = `近${C.length}日`;
   }
 
+  // 從 TWSE BWIBBU_d 抓本益比、殖利率、股價淨值比
+  let pe = null, pb = null, dividendYield = null;
+  try {
+    const res = await fetch(`/api/tw-fundamental/${sn}`);
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ok) { pe = d.pe; pb = d.pb; dividendYield = d.dividendYield; }
+    }
+  } catch(_) {}
+
   return {
-    ok: true,
-    symbol: sn,
-    pe, eps,
-    grossMargin: null, opMargin: null, // 台股 Yahoo 無法取得
+    ok: true, symbol: sn,
+    pe, pb, dividendYield,
+    grossMargin: null, opMargin: null,
     debtRatio: null, currentRatio: null,
-    revenueGrowth: null,
-    earningsGrowth: null,
-    week52High: w52H,
-    week52Low: w52L,
-    dividendYield, beta: null, targetPrice: null,
+    revenueGrowth: null, earningsGrowth: null,
+    week52High: w52H, week52Low: w52L,
+    beta: null, targetPrice: null,
     _tw: true,
     _ma: { ma5, ma20, ma60 },
     _recentGrowth: recentGrowth,
     _recentLabel: recentLabel,
+    _pb: pb,
   };
 }
 
