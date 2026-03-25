@@ -128,7 +128,7 @@ const CHAINS = {
       { id:'hynix',  x:175, y:418, w:130, label:'SK Hynix',   sub:'HBM記憶體 🇰🇷',    color:'blue',   code:'HXSCL',     role:'記憶體',  desc:'全球 HBM（高頻寬記憶體）第一，NVIDIA H100 內的 HBM 幾乎全來自 SK Hynix。（美股 ADR）' },
       { id:'hon',    x:320, y:418, w:110, label:'鴻海',        sub:'代工組裝 2317 🇹🇼', color:'amber',  code:'2317',   role:'系統組裝',   desc:'全球最大電子代工廠，負責 iPhone、伺服器組裝，AI 伺服器需求強勁。' },
       { id:'quanta', x:445, y:418, w:110, label:'廣達',        sub:'AI伺服器 2382 🇹🇼', color:'amber',  code:'2382',   role:'系統組裝',   desc:'全球最大筆電代工廠，同時是最大 AI 伺服器廠，Google、Meta 的伺服器大多由廣達代工。' },
-      { id:'sil',    x:570, y:418, w:110, label:'矽品',        sub:'封裝 2325 🇹🇼',     color:'amber',  code:'2325',   role:'封裝測試',   desc:'台灣第二大封裝廠，已與日月光合併（ASE集團），提供先進封裝服務。' },
+      { id:'sil',    x:570, y:418, w:110, label:'和碩',        sub:'代工組裝 4938 🇹🇼',  color:'amber',  code:'4938',   role:'系統組裝',   desc:'台灣第二大電子代工廠，蘋果 iPhone 重要代工夥伴，與鴻海共同承接 Apple 訂單。' },
       // 終端
       { id:'dell',   x:40,  y:578, w:120, label:'Dell',       sub:'伺服器 🇺🇸',        color:'gray',   code:'DELL',   role:'系統整合',   desc:'全球最大伺服器廠商之一，AI 伺服器需求帶動業績大幅成長。' },
       { id:'apple',  x:175, y:578, w:110, label:'Apple',      sub:'自研晶片 🇺🇸',      color:'gray',   code:'AAPL',   role:'終端品牌',   desc:'A 系列、M 系列晶片全由台積電生產，是台積電最大客戶之一。' },
@@ -198,7 +198,7 @@ const CHAINS = {
       // 整車
       { id:'tsla2', x:40,  y:418, w:120, label:'Tesla',     sub:'電動車 🇺🇸',        color:'coral',  code:'TSLA',   role:'整車品牌',   desc:'全球最有品牌價值的電動車公司，自動駕駛 FSD 是最大差異化優勢，Gigafactory 遍布全球。' },
       { id:'gm',    x:175, y:418, w:110, label:'GM',        sub:'電動車 🇺🇸',        color:'coral',  code:'GM',     role:'整車品牌',   desc:'美國傳統車廠轉型電動車，Ultium 電池平台搭配 LG Energy 電池。' },
-      { id:'vw',    x:300, y:418, w:110, label:'Volkswagen',sub:'電動車 🇩🇪',        color:'coral',  code:'VOW3.DE',role:'整車品牌',   desc:'歐洲最大車廠，ID.4 等車型在全球熱銷，電動化轉型積極。' },
+      { id:'vw',    x:300, y:418, w:110, label:'Volkswagen',sub:'電動車 🇩🇪',        color:'coral',  code:'VWAGY',  role:'整車品牌',   desc:'歐洲最大車廠，ID.4 等車型在全球熱銷，電動化轉型積極。（美股 ADR）' },
       { id:'hyun',  x:425, y:418, w:120, label:'現代起亞',  sub:'電動車 🇰🇷',        color:'coral',  code:'HYMTF',     role:'整車品牌', desc:'IONIQ 6 獲年度最佳電動車，電動化轉型速度在傳統車廠中最快之一。（美股 ADR）' },
       { id:'li',    x:560, y:418, w:110, label:'理想汽車',  sub:'增程電動 🇨🇳',      color:'coral',  code:'LI',     role:'整車品牌',   desc:'中國增程式電動車龍頭，已在美股上市，聚焦家庭用戶市場。' },
       // 下游
@@ -208,7 +208,7 @@ const CHAINS = {
       { id:'tsla3', x:445, y:578, w:110, label:'Tesla FSD', sub:'自駕軟體 🇺🇸',      color:'gray',   code:'TSLA',   role:'自駕軟體',   desc:'特斯拉完全自動駕駛軟體，是未來最大收入來源之一，每輛車訂閱制。' },
       // 消費市場
       { id:'uber',  x:40,  y:718, w:110, label:'Uber',      sub:'叫車平台 🇺🇸',      color:'blue',   code:'UBER',   role:'出行平台',   desc:'自動駕駛普及後最大受益者之一，Robotaxi 是未來競爭主戰場。' },
-      { id:'fleet', x:165, y:718, w:120, label:'Hertz',     sub:'租車車隊 🇺🇸',      color:'blue',   code:'HTZZ',   role:'車隊採購',   desc:'全球最大租車公司，大量採購特斯拉做為車隊電動化。' },
+      { id:'fleet', x:165, y:718, w:120, label:'Rivian',    sub:'電動皮卡 🇺🇸',      color:'blue',   code:'RIVN',   role:'整車品牌',   desc:'Amazon 最大股東之一，專注電動皮卡和商用車，Amazon 訂購 10 萬輛配送車。' },
       { id:'xpeng', x:300, y:718, w:110, label:'小鵬汽車',  sub:'智慧電動 🇨🇳',      color:'blue',   code:'XPEV',   role:'整車品牌',   desc:'中國自動駕駛技術領先的電動車品牌，XNGP 系統已接近 L3 水準。' },
       { id:'nio',   x:425, y:718, w:100, label:'蔚來',      sub:'換電模式 🇨🇳',      color:'blue',   code:'NIO',    role:'整車品牌',   desc:'中國高端電動車品牌，首創換電站模式，已在美股和港股上市。' },
     ],
