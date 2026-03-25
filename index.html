@@ -206,12 +206,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 .hc-text  { font-size: 14px; color: var(--text); line-height: 1.6; }
 .hc-value { font-size: 12px; color: var(--dim); margin-top: 3px; font-family: monospace; }
 
-/* News */
-.news-item { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 11px 14px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; text-decoration: none; display: block; }
-.news-item:hover { border-color: var(--navy); }
-.news-title { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.5; margin-bottom: 5px; }
-.news-meta  { display: flex; gap: 8px; font-size: 11px; color: var(--dim); }
-.news-empty { font-size: 13px; color: var(--dim); padding: 12px 0; text-align: center; }
 
 /* Score card */
 .score-card { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; }
@@ -266,6 +260,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
     <div>
       <div class="hdr-title">📈 股票查詢</div>
       <div class="hdr-sub">輸入代號或公司名稱，簡單看懂今天的行情</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="/supply-chain.html" style="font-size:12px;color:#8eabc8;text-decoration:none;border:1px solid #3a5f82;padding:5px 10px;border-radius:8px;white-space:nowrap;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8eabc8'">🗺 供應鏈地圖</a>
     </div>
     <div class="hdr-right">
       <div class="hdr-time" id="clk">--:--</div>
@@ -345,13 +342,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
           <div class="w-skel" style="height:50px"></div>
         </div>
 
-        <!-- 最新新聞 -->
-        <div class="sec-t" style="margin-top:16px">📰 最新相關新聞</div>
-        <div id="news-box">
-          <div class="w-skel" style="height:56px;margin-bottom:8px"></div>
-          <div class="w-skel" style="height:56px;margin-bottom:8px"></div>
-          <div class="w-skel" style="height:56px"></div>
-        </div>
 
         <div class="disc">資料來源：台灣證交所 / Yahoo Finance，盤中約延遲 5 分鐘。以上說明僅供參考，投資請自行判斷，風險自負。</div>
       </div>
@@ -1004,26 +994,12 @@ function renderHealthCheck(fund, price) {
         </div>
       </div>`).join('')}`;
 }
-function renderNews(newsData) {
-  const el=document.getElementById('news-box');
-  const list=newsData?.news||[];
-  if(!list.length){el.innerHTML=`<div class="news-empty">暫無相關新聞</div>`;return;}
-  el.innerHTML=list.map(n=>`
-    <a class="news-item" href="${n.link}" target="_blank" rel="noopener">
-      <div class="news-title">${n.title}</div>
-      <div class="news-meta"><span>${n.publisher}</span><span>${n.time}</span></div>
-    </a>`).join('');
-}
+
 async function fetchHealthAndNews(sn, price) {
   const sym = isTW(sn) ? sn+'.TW' : sn;
-  const [fr,nr]=await Promise.all([
-    fetch(`/api/fundamentals/${sym}`).catch(()=>null),
-    fetch(`/api/news/${sn}`).catch(()=>null),
-  ]);
+  const fr = await fetch(`/api/fundamentals/${sym}`).catch(()=>null);
   const fund = fr ? await fr.json().catch(()=>null) : null;
-  const news = nr ? await nr.json().catch(()=>null) : null;
   renderHealthCheck(fund, price);
-  renderNews(news);
 }
 
 async function doSearch(){
@@ -1488,6 +1464,10 @@ renderAlerts();
 loadFavPrices();
 // 頁面載入後自動檢查價格提醒
 setTimeout(checkAlerts, 3000);
+
+// 支援從供應鏈地圖跳轉後自動查詢
+const _autoq = new URLSearchParams(location.search).get('autoq');
+if(_autoq){ document.getElementById('inp').value=_autoq.toUpperCase(); setTimeout(doSearch,400); }
 </script>
 </body>
 </html>
