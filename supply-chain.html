@@ -10,11 +10,10 @@
   --bg:#f4f2ed; --card:#fff; --card2:#faf9f6; --bd:#e2ddd5;
   --text:#1a1a1a; --dim:#6b6460; --navy:#1e3a5f;
 }
-@media(prefers-color-scheme: dark){
-  :root {
-    --bg:#111210; --card:#1c1c1a; --card2:#242422; --bd:#333330;
-    --text:#e8e6e0; --dim:#888580; --navy:#1a3454;
-  }
+@media(prefers-color-scheme: dark){ :root { --sys-dark:1; } }
+[data-theme="dark"] {
+  --bg:#111210; --card:#1c1c1a; --card2:#242422; --bd:#333330;
+  --text:#e8e6e0; --dim:#888580; --navy:#1a3454;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
 body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; }
@@ -309,22 +308,24 @@ const CHAINS = {
 };
 
 // ── 顏色 ──────────────────────────────────────────────────────
-const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-const COLORS = isDark ? {
-  teal:   { fill:'#0d2e22', stroke:'#1d6b4a', text:'#7dd4b0' },
-  purple: { fill:'#1a1730', stroke:'#6b63c8', text:'#b0aaf0' },
-  coral:  { fill:'#2a1208', stroke:'#b04020', text:'#e8907a' },
-  amber:  { fill:'#261a04', stroke:'#c07010', text:'#e8b060' },
-  gray:   { fill:'#1e1e1c', stroke:'#555550', text:'#b0aea8' },
-  blue:   { fill:'#0a1e32', stroke:'#2060a0', text:'#80b8e8' },
-} : {
-  teal:   { fill:'#E1F5EE', stroke:'#5DCAA5', text:'#085041' },
-  purple: { fill:'#EEEDFE', stroke:'#534AB7', text:'#26215C' },
-  coral:  { fill:'#FAECE7', stroke:'#D85A30', text:'#4A1B0C' },
-  amber:  { fill:'#FAEEDA', stroke:'#EF9F27', text:'#412402' },
-  gray:   { fill:'#F1EFE8', stroke:'#888780', text:'#2C2C2A' },
-  blue:   { fill:'#E6F1FB', stroke:'#378ADD', text:'#042C53' },
-};
+function getColors() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return dark ? {
+    teal:   { fill:'#0d2e22', stroke:'#1d6b4a', text:'#7dd4b0' },
+    purple: { fill:'#1a1730', stroke:'#6b63c8', text:'#b0aaf0' },
+    coral:  { fill:'#2a1208', stroke:'#b04020', text:'#e8907a' },
+    amber:  { fill:'#261a04', stroke:'#c07010', text:'#e8b060' },
+    gray:   { fill:'#1e1e1c', stroke:'#555550', text:'#b0aea8' },
+    blue:   { fill:'#0a1e32', stroke:'#2060a0', text:'#80b8e8' },
+  } : {
+    teal:   { fill:'#E1F5EE', stroke:'#5DCAA5', text:'#085041' },
+    purple: { fill:'#EEEDFE', stroke:'#534AB7', text:'#26215C' },
+    coral:  { fill:'#FAECE7', stroke:'#D85A30', text:'#4A1B0C' },
+    amber:  { fill:'#FAEEDA', stroke:'#EF9F27', text:'#412402' },
+    gray:   { fill:'#F1EFE8', stroke:'#888780', text:'#2C2C2A' },
+    blue:   { fill:'#E6F1FB', stroke:'#378ADD', text:'#042C53' },
+  };
+}
 
 // ── 計算節點中心 ────────────────────────────────────────────────
 function nodeCenter(n) {
@@ -348,6 +349,8 @@ let currentChain = 'semicon';
 function renderChain(chainKey) {
   currentChain = chainKey;
   const chain = CHAINS[chainKey];
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const COLORS  = getColors();
   const svg   = document.getElementById('chain-svg');
   const nodeMap = {};
   chain.nodes.forEach(n => nodeMap[n.id] = n);
@@ -424,6 +427,38 @@ function showChain(key, el) {
 
 // 初始載入
 renderChain('semicon');
+</script>
+
+<!-- Dark mode toggle (sync with main page) -->
+<button id="theme-btn" onclick="toggleTheme()" title="切換深色/淺色模式" style="
+  position:fixed; bottom:20px; right:16px; z-index:900;
+  width:36px; height:36px; border-radius:50%;
+  background:var(--card); border:1px solid var(--bd);
+  cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.15); transition:background .2s, border-color .2s;
+" aria-label="切換深色模式">🌙</button>
+
+<script>
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-btn');
+  if(btn) btn.textContent = dark ? '☀️' : '🌙';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+}
+function toggleTheme() {
+  const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!isDarkNow);
+  // 重新繪製供應鏈（顏色需要更新）
+  renderChain(currentChain);
+}
+(function(){
+  const saved = localStorage.getItem('theme');
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : sysDark);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if(!localStorage.getItem('theme')) applyTheme(e.matches);
+  });
+})();
 </script>
 </body>
 </html>
