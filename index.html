@@ -985,22 +985,44 @@ function scoreRingSVG(score) {
 function renderHealthCheck(fund, price) {
   const el = document.getElementById('health-box');
   if (!fund || !fund.ok) {
-    el.innerHTML = `<div class="news-empty">基本面資料暫時無法取得</div>`; return;
+    // 顯示局部提示而非完全空白
+    el.innerHTML = `<div class="hc-row">
+      <div class="hc-dot gray"></div>
+      <div>
+        <div class="hc-label">資料說明</div>
+        <div class="hc-text">基本面資料目前無法取得。台股的本益比、毛利率等數據建議至少查詢這幾個網站：
+          <a href="https://goodinfo.tw" target="_blank" style="color:var(--navy)">Goodinfo</a>、
+          <a href="https://statementdog.com" target="_blank" style="color:var(--navy)">財報狗</a>。
+        </div>
+      </div>
+    </div>`;
+    return;
   }
+
   const checks = [
-    { label:'💰 價格合理性', ...interpretPE(fund.pe) },
+    { label:'💰 價格合理性', ...interpretPE(fund.pe ?? fund.forwardPE) },
     { label:'📈 成長動能',   ...interpretGrowth(fund.revenueGrowth, fund.earningsGrowth) },
     { label:'💪 獲利能力',   ...interpretMargin(fund.grossMargin, fund.opMargin) },
     { label:'🏦 財務健康',   ...interpretDebt(fund.debtRatio) },
     { label:'🎯 目前位置',   ...interpretPos(price, fund.week52Low, fund.week52High) },
   ];
+
+  // 有幾個燈是 gray（資料不足）
+  const grayCount = checks.filter(c => c.dot === 'gray').length;
   const score = calcScore(checks);
   const label = score>=70?'整體健康':score>=40?'需要留意':'風險偏高';
   const desc  = score>=70?'各項指標大致正常，相對適合研究看看':score>=40?'部分指標需留意，下單前多做功課':'多個警示燈亮起，建議謹慎評估';
+
   const extras=[];
-  if(fund.targetPrice) extras.push(`分析師目標價 $${fund.targetPrice}`);
-  if(fund.dividendYield) extras.push(`殖利率 ${fund.dividendYield}%`);
-  if(fund.beta) extras.push(`Beta ${fund.beta}`);
+  if(fund.eps)          extras.push(`EPS $${fund.eps}`);
+  if(fund.targetPrice)  extras.push(`分析師目標價 $${fund.targetPrice}`);
+  if(fund.dividendYield && fund.dividendYield > 0) extras.push(`殖利率 ${fund.dividendYield}%`);
+  if(fund.beta)         extras.push(`Beta ${fund.beta}`);
+
+  const dataNote = grayCount >= 3
+    ? `<div style="font-size:11px;color:var(--dim);margin-top:6px;padding:6px 10px;background:var(--card2);border-radius:7px">⚠️ 部分指標資料不足（灰色燈號），健康分數僅供參考</div>`
+    : '';
+
   el.innerHTML=`
     <div class="score-card">
       <div class="score-ring">${scoreRingSVG(score)}</div>
@@ -1010,6 +1032,7 @@ function renderHealthCheck(fund, price) {
         ${extras.length?`<div style="font-size:11px;color:var(--dim);margin-top:4px">${extras.join('　')}</div>`:''}
       </div>
     </div>
+    ${dataNote}
     ${checks.map(c=>`
       <div class="hc-row">
         <div class="hc-dot ${c.dot}"></div>
