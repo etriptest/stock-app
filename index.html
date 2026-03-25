@@ -1151,13 +1151,6 @@ async function doSearch(){
     fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
     fetchHealthAndNews(sn, q.price);
 
-    // 三大法人（僅台股）
-    if(tw){
-      fetchInstitutional(sn);
-    } else {
-      document.getElementById('inst-title').style.display='none';
-      document.getElementById('inst-box').innerHTML='';
-    }
   }catch(e){
     document.getElementById('loading').style.display='none';
     const eb=document.getElementById('errbox');
