@@ -1153,9 +1153,30 @@ async function fetchTWFundamentals(sn, price, klineData) {
 }
 
 async function doSearch(){
-  const sn=document.getElementById('inp').value.trim().toUpperCase();
-  if(!sn)return;
-  document.getElementById('inp').value=sn;
+  let sn = document.getElementById('inp').value.trim();
+  if(!sn) return;
+
+  // 如果輸入的不是代號（數字或英文），先從資料庫查名稱對應代號
+  if(!/^[0-9a-zA-Z]/.test(sn)){
+    const allDB = [...TW_DB, ...US_DB];
+    const found = allDB.find(s =>
+      s.n === sn ||
+      s.n.includes(sn) ||
+      s.n.toLowerCase().includes(sn.toLowerCase())
+    );
+    if(found){
+      sn = found.c;
+      document.getElementById('inp').value = sn;
+    } else {
+      // 找不到就顯示錯誤
+      document.getElementById('errbox').textContent = `❌ 找不到「${sn}」，請確認股票名稱或改輸入股票代號`;
+      document.getElementById('errbox').style.display = 'block';
+      return;
+    }
+  }
+
+  sn = sn.toUpperCase();
+  document.getElementById('inp').value = sn;
   dd.style.display='none';
   document.getElementById('loading').style.display='block';
   document.getElementById('result').style.display='none';
