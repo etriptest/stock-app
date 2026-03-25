@@ -985,12 +985,11 @@ function scoreRingSVG(score) {
 function renderHealthCheck(fund, price) {
   const el = document.getElementById('health-box');
   if (!fund || !fund.ok) {
-    // 顯示局部提示而非完全空白
     el.innerHTML = `<div class="hc-row">
       <div class="hc-dot gray"></div>
       <div>
         <div class="hc-label">資料說明</div>
-        <div class="hc-text">基本面資料目前無法取得。台股的本益比、毛利率等數據建議至少查詢這幾個網站：
+        <div class="hc-text">基本面資料目前無法取得。台股建議查詢：
           <a href="https://goodinfo.tw" target="_blank" style="color:var(--navy)">Goodinfo</a>、
           <a href="https://statementdog.com" target="_blank" style="color:var(--navy)">財報狗</a>。
         </div>
@@ -999,28 +998,59 @@ function renderHealthCheck(fund, price) {
     return;
   }
 
+  const isTWStock = !!fund._tw;
+  const ma = fund._ma || {};
+
+  // 台股：成長動能改用近 60 日漲跌幅
+  let growthCheck;
+  if (isTWStock && fund._recentGrowth != null) {
+    const g = fund._recentGrowth;
+    if (g > 20)       growthCheck = { dot:'red',    text:`近 3 個月累積上漲 ${g}%，漲勢強勁`, val:`近60日 +${g}%` };
+    else if (g > 5)   growthCheck = { dot:'red',    text:`近 3 個月累積上漲 ${g}%，走勢偏強`, val:`近60日 +${g}%` };
+    else if (g > -5)  growthCheck = { dot:'yellow', text:`近 3 個月股價變動不大（${g}%），整理中`, val:`近60日 ${g}%` };
+    else if (g > -20) growthCheck = { dot:'green',  text:`近 3 個月累積下跌 ${g}%，走勢偏弱`, val:`近60日 ${g}%` };
+    else              growthCheck = { dot:'green',  text:`近 3 個月累積下跌 ${g}%，跌幅較深`, val:`近60日 ${g}%` };
+  } else {
+    growthCheck = interpretGrowth(fund.revenueGrowth, fund.earningsGrowth);
+  }
+
+  // 台股：獲利能力改用均線排列
+  let marginCheck;
+  if (isTWStock && ma.ma5 && ma.ma20) {
+    if (price > ma.ma5 && ma.ma5 > ma.ma20)
+      marginCheck = { dot:'red',    text:`股價站在 MA5(${ma.ma5}) 和 MA20(${ma.ma20}) 上方，均線排列向上，走勢強勢`, val:`均線多頭排列` };
+    else if (price < ma.ma5 && ma.ma5 < ma.ma20)
+      marginCheck = { dot:'green',  text:`股價跌破 MA5(${ma.ma5}) 和 MA20(${ma.ma20})，均線排列向下，走勢弱勢`, val:`均線空頭排列` };
+    else if (price > ma.ma20)
+      marginCheck = { dot:'yellow', text:`股價在 MA20(${ma.ma20}) 上方，中期走勢尚可`, val:`站在月線上` };
+    else
+      marginCheck = { dot:'yellow', text:`股價在 MA20(${ma.ma20}) 下方，中期走勢需觀察`, val:`跌破月線` };
+  } else {
+    marginCheck = interpretMargin(fund.grossMargin, fund.opMargin);
+  }
+
   const checks = [
-    { label:'💰 價格合理性', ...interpretPE(fund.pe ?? fund.forwardPE) },
-    { label:'📈 成長動能',   ...interpretGrowth(fund.revenueGrowth, fund.earningsGrowth) },
-    { label:'💪 獲利能力',   ...interpretMargin(fund.grossMargin, fund.opMargin) },
+    { label:'💰 本益比評估', ...interpretPE(fund.pe ?? fund.forwardPE) },
+    { label:'📈 近期走勢',   ...growthCheck },
+    { label:'📏 均線位置',   ...marginCheck },
     { label:'🏦 財務健康',   ...interpretDebt(fund.debtRatio) },
-    { label:'🎯 目前位置',   ...interpretPos(price, fund.week52Low, fund.week52High) },
+    { label:'🎯 52週位置',   ...interpretPos(price, fund.week52Low, fund.week52High) },
   ];
 
-  // 有幾個燈是 gray（資料不足）
   const grayCount = checks.filter(c => c.dot === 'gray').length;
   const score = calcScore(checks);
   const label = score>=70?'整體健康':score>=40?'需要留意':'風險偏高';
   const desc  = score>=70?'各項指標大致正常，相對適合研究看看':score>=40?'部分指標需留意，下單前多做功課':'多個警示燈亮起，建議謹慎評估';
 
   const extras=[];
+  if(fund.pe)           extras.push(`本益比 ${fund.pe} 倍`);
   if(fund.eps)          extras.push(`EPS $${fund.eps}`);
-  if(fund.targetPrice)  extras.push(`分析師目標價 $${fund.targetPrice}`);
+  if(fund.targetPrice)  extras.push(`目標價 $${fund.targetPrice}`);
   if(fund.dividendYield && fund.dividendYield > 0) extras.push(`殖利率 ${fund.dividendYield}%`);
   if(fund.beta)         extras.push(`Beta ${fund.beta}`);
 
   const dataNote = grayCount >= 3
-    ? `<div style="font-size:11px;color:var(--dim);margin-top:6px;padding:6px 10px;background:var(--card2);border-radius:7px">⚠️ 部分指標資料不足（灰色燈號），健康分數僅供參考</div>`
+    ? `<div style="font-size:11px;color:var(--dim);margin:6px 0 8px;padding:6px 10px;background:var(--card2);border-radius:7px">⚠️ 部分指標資料不足，健康分數僅供參考${isTWStock?'（台股財務細節建議查 <a href="https://goodinfo.tw" target="_blank" style="color:var(--navy)">Goodinfo</a>）':''}</div>`
     : '';
 
   el.innerHTML=`
@@ -1044,11 +1074,71 @@ function renderHealthCheck(fund, price) {
       </div>`).join('')}`;
 }
 
-async function fetchHealthAndNews(sn, price) {
-  const sym = isTW(sn) ? sn+'.TW' : sn;
-  const fr = await fetch(`/api/fundamentals/${sym}`).catch(()=>null);
-  const fund = fr ? await fr.json().catch(()=>null) : null;
-  renderHealthCheck(fund, price);
+async function fetchHealthAndNews(sn, price, klineData) {
+  const tw = isTW(sn);
+
+  if (tw) {
+    // 台股：直接用 K 線算 52 週高低，PE 從 TWSE 抓
+    const fund = await fetchTWFundamentals(sn, price, klineData);
+    renderHealthCheck(fund, price);
+  } else {
+    // 美股：用 Yahoo Finance
+    const sym = sn;
+    const fr = await fetch(`/api/fundamentals/${sym}`).catch(()=>null);
+    const fund = fr ? await fr.json().catch(()=>null) : null;
+    renderHealthCheck(fund, price);
+  }
+}
+
+async function fetchTWFundamentals(sn, price, klineData) {
+  const { C=[], H=[], L=[] } = klineData || {};
+
+  // 從 K 線算 52 週高低（約 240 個交易日）
+  const w52H = H.length ? Math.max(...H) : null;
+  const w52L = L.length ? Math.min(...L) : null;
+
+  let pe = null, eps = null, dividendYield = null;
+
+  try {
+    // TWSE 本益比資料（每日盤後）
+    const today = new Date();
+    const ym = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
+    const res = await fetch(`/api/history/${sn}?ym=${ym}`).catch(()=>null);
+    if (res && res.ok) {
+      const d = await res.json();
+      const rows = d.data || [];
+      // 最後一筆有 pe 欄位的資料
+      for (let i = rows.length-1; i >= 0; i--) {
+        if (rows[i].pe && rows[i].pe > 0) { pe = +rows[i].pe.toFixed(1); break; }
+      }
+    }
+  } catch(_) {}
+
+  // 計算均線位置（用 K 線資料）
+  const ma5  = C.length >= 5  ? +(C.slice(-5).reduce((a,b)=>a+b,0)/5).toFixed(2)  : null;
+  const ma20 = C.length >= 20 ? +(C.slice(-20).reduce((a,b)=>a+b,0)/20).toFixed(2) : null;
+  const ma60 = C.length >= 60 ? +(C.slice(-60).reduce((a,b)=>a+b,0)/60).toFixed(2) : null;
+
+  // 近期漲跌（計算成長動能替代）
+  const recentGrowth = C.length >= 60
+    ? +((price - C[C.length-60]) / C[C.length-60] * 100).toFixed(1)
+    : null;
+
+  return {
+    ok: true,
+    symbol: sn,
+    pe, eps,
+    grossMargin: null, opMargin: null, // 台股 Yahoo 無法取得
+    debtRatio: null, currentRatio: null,
+    revenueGrowth: null,
+    earningsGrowth: null,
+    week52High: w52H,
+    week52Low: w52L,
+    dividendYield, beta: null, targetPrice: null,
+    _tw: true,
+    _ma: { ma5, ma20, ma60 },
+    _recentGrowth: recentGrowth,
+  };
 }
 
 async function doSearch(){
@@ -1175,7 +1265,7 @@ async function doSearch(){
     }
 
     fetchAI(q,{rv,k,d,mc,ma5,ma20,vr,riT:ri.txt,kiT:ki.txt,miT:mi.txt,maiT:mai.txt,viT:vi.txt,tw});
-    fetchHealthAndNews(sn, q.price);
+    fetchHealthAndNews(sn, q.price, { C, H, L });
 
   }catch(e){
     document.getElementById('loading').style.display='none';
